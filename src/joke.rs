@@ -1,9 +1,11 @@
 use std::collections::HashSet;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+use serde::Serialize;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct JokeId(String);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Joke {
     id: JokeId,
     whos_there: String,
@@ -12,21 +14,17 @@ pub struct Joke {
 }
 
 impl Joke {
-    pub fn new(
-        id: usize,
-        whos_there: &str,
-        answer_who: &str,
-        tags: &[&str],
-    ) -> Self {
+    pub fn new(id: usize, whos_there: &str, answer_who: &str, tags: &[&str]) -> Self {
         let id = JokeId(id.to_string());
         let whos_there = whos_there.into();
         let answer_who = answer_who.into();
-        let tags: HashSet<String> = tags
-            .iter()
-            .copied()
-            .map(String::from)
-            .collect();
-        Self { id, whos_there, answer_who, tags }
+        let tags: HashSet<String> = tags.iter().copied().map(String::from).collect();
+        Self {
+            id,
+            whos_there,
+            answer_who,
+            tags,
+        }
     }
 }
 
@@ -38,10 +36,7 @@ impl From<&Joke> for String {
         text += &format!("\"{}\" who?\n", joke.whos_there);
         text += &format!("{}\n", joke.answer_who);
         text += "\n";
-        let taglist: Vec<&str> = joke.tags
-            .iter()
-            .map(String::as_ref)
-            .collect();
+        let taglist: Vec<&str> = joke.tags.iter().map(String::as_ref).collect();
         let taglist = taglist.join(", ");
         text += &format!("[id: {}; tags: {}]\n", joke.id.0, taglist);
         text
