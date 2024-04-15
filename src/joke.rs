@@ -2,12 +2,12 @@ use std::collections::HashSet;
 
 use serde::Serialize;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Hash)]
 pub struct JokeId(String);
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Joke {
-    id: JokeId,
+    pub id: JokeId,
     whos_there: String,
     answer_who: String,
     tags: HashSet<String>,
