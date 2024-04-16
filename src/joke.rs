@@ -1,13 +1,17 @@
-use std::collections::HashSet;
-
-use serde::Serialize;
+use crate::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Hash)]
 pub struct JokeId(String);
 
+impl JokeId {
+    pub fn new(id: usize) -> Self {
+        Self(id.to_string())
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Joke {
-    pub id: JokeId,
+    id: JokeId,
     whos_there: String,
     answer_who: String,
     tags: HashSet<String>,
