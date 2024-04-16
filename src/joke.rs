@@ -46,3 +46,9 @@ impl From<&Joke> for String {
         text
     }
 }
+
+impl IntoResponse for &Joke {
+    fn into_response(self) -> Response {
+        (StatusCode::OK, Json(&self)).into_response()
+    }
+}

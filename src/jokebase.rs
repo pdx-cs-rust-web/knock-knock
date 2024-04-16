@@ -60,6 +60,11 @@ impl JokeBase {
             .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
         Ok(Self { _file: file, jokemap })
     }
+
+    pub fn get_random(&self) -> Joke {
+        let joke = fastrand::choice(self.jokemap.iter()).unwrap().1;
+        joke.to_owned()
+    }
 }
 
 impl IntoResponse for &JokeBase {

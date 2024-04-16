@@ -17,6 +17,7 @@ use axum::{
     routing::get,
     Json, Router,
 };
+extern crate fastrand;
 use serde::{Serialize, Deserialize};
 extern crate serde_json;
 extern crate tokio;
@@ -26,6 +27,11 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 async fn jokes(State(jokebase): State<Arc<JokeBase>>) -> Response {
     jokebase.into_response()
+}
+
+async fn joke(State(jokebase): State<Arc<JokeBase>>) -> Response {
+    let joke = jokebase.get_random();
+    joke.into_response()
 }
 
 async fn handler_404() -> Response {
@@ -53,6 +59,7 @@ async fn main() {
         });
     let app = Router::new()
         .route("/jokes", get(jokes))
+        .route("/joke", get(joke))
         .fallback(handler_404)
         .layer(trace_layer)
         .with_state(Arc::new(jokebase));
