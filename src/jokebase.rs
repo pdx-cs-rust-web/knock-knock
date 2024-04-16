@@ -41,7 +41,7 @@ fn default_jokemap() -> JokeMap {
     JOKEBASE
         .iter()
         .map(|(name, l1, l2, tags)| {
-            (JokeId::new(name), Joke::new(name, l1, l2, tags))
+            (JokeId::new(name), Joke::new(name, l1, l2, tags, None))
         })
         .collect()
 }

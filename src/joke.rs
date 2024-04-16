@@ -21,20 +21,29 @@ pub struct Joke {
     id: JokeId,
     whos_there: String,
     answer_who: String,
-    tags: HashSet<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tags: Option<HashSet<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    source: Option<String>,
 }
 
 impl Joke {
-    pub fn new(id: &str, whos_there: &str, answer_who: &str, tags: &[&str]) -> Self {
+    pub fn new(id: &str, whos_there: &str, answer_who: &str, tags: &[&str], source: Option<&str>) -> Self {
         let id = JokeId(id.to_owned());
         let whos_there = whos_there.into();
         let answer_who = answer_who.into();
-        let tags: HashSet<String> = tags.iter().copied().map(String::from).collect();
+        let tags: Option<HashSet<String>> = if tags.is_empty() {
+            None
+        } else {
+            Some(tags.iter().copied().map(String::from).collect())
+        };
+        let source = source.map(String::from);
         Self {
             id,
             whos_there,
             answer_who,
             tags,
+            source,
         }
     }
 
@@ -51,9 +60,18 @@ impl From<&Joke> for String {
         text += &format!("\"{}\" who?\n", joke.whos_there);
         text += &format!("{}\n", joke.answer_who);
         text += "\n";
-        let taglist: Vec<&str> = joke.tags.iter().map(String::as_ref).collect();
-        let taglist = taglist.join(", ");
-        text += &format!("[id: {}; tags: {}]\n", joke.id.0, taglist);
+
+        let mut annote: Vec<String> = vec![format!("id: {}", joke.id)];
+        if let Some(tags) = &joke.tags {
+            let taglist: Vec<&str> = tags.iter().map(String::as_ref).collect();
+            let taglist = taglist.join(", ");
+            annote.push(format!("tags: {}", taglist));
+        }
+        if let Some(source) = &joke.source {
+            annote.push(format!(r#"source: "{}""#, source));
+        }
+        let annote = annote.join("; ");
+        text += &format!("[{}]\n", annote);
         text
     }
 }
