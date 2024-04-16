@@ -9,6 +9,13 @@ impl JokeId {
     }
 }
 
+impl std::fmt::Display for JokeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "{}", self.0)
+    }
+}
+
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Joke {
     id: JokeId,
@@ -29,6 +36,10 @@ impl Joke {
             answer_who,
             tags,
         }
+    }
+
+    pub fn id(&self) -> &JokeId {
+        &self.id
     }
 }
 

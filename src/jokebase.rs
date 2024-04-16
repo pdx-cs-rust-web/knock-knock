@@ -21,12 +21,19 @@ pub static JOKEBASE: &[(&str, &str, &str, &[&str])] = &[
     ),
 ];
 
+#[derive(Debug, thiserror::Error)]
+pub enum JokeBaseError {
+    #[error("joke already exists: {0}")]
+    JokeExists(JokeId),
+    #[error("jokebase write: {0}")]
+    JokeFileWrite(#[from] std::io::Error),
+}
 
 type JokeMap = HashMap<JokeId, Joke>;
 
 #[derive(Debug)]
 pub struct JokeBase {
-    _file: File,
+    file: File,
     jokemap: JokeMap,
 }
 
@@ -60,7 +67,7 @@ impl JokeBase {
         let json = std::io::read_to_string(&mut file)?;
         let jokemap = serde_json::from_str(&json)
             .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
-        Ok(Self { _file: file, jokemap })
+        Ok(Self { file, jokemap })
     }
 
     pub fn get_random(&self) -> Option<Joke> {
@@ -71,6 +78,22 @@ impl JokeBase {
     pub fn get(&self, index: &JokeId) -> Option<Joke> {
         let joke = self.jokemap.get(index)?;
         Some(joke.to_owned())
+    }
+
+    fn write_jokes(&mut self) -> Result<(), std::io::Error> {
+        let json = serde_json::to_string(&self.jokemap).unwrap();
+        self.file.write_all(json.as_bytes())?;
+        self.file.sync_all()
+    }
+
+    pub fn add(&mut self, joke: Joke) -> Result<(), JokeBaseError> {
+        let id = joke.id().clone();
+        if self.jokemap.get(&id).is_some() {
+            return Err(JokeBaseError::JokeExists(id));
+        }
+        self.jokemap.insert(id, joke);
+        self.write_jokes()?;
+        Ok(())
     }
 }
 
