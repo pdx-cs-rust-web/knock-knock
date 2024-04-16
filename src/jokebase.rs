@@ -1,17 +1,20 @@
 use crate::*;
 
-pub static JOKEBASE: &[(&str, &str, &[&str])] = &[
+pub static JOKEBASE: &[(&str, &str, &str, &[&str])] = &[
     (
+        "boo",
         "Boo",
         "You don't have to cry about it!",
         &["kids", "oldie"],
     ),
     (
+        "cargo",
         "Cargo",
         "Car go beep.",
         &["kids"],
     ),
     (
+        "dwayne",
         "Dwayne",
         "Dwayne the bathtub, I'm dwowning!",
         &["kids", "oldie"],
@@ -30,9 +33,8 @@ pub struct JokeBase {
 fn default_jokemap() -> JokeMap {
     JOKEBASE
         .iter()
-        .enumerate()
-        .map(|(i, (l1, l2, tags))| {
-            (JokeId::new(i), Joke::new(i, l1, l2, tags))
+        .map(|(name, l1, l2, tags)| {
+            (JokeId::new(name), Joke::new(name, l1, l2, tags))
         })
         .collect()
 }

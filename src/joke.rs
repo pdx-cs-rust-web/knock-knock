@@ -4,8 +4,8 @@ use crate::*;
 pub struct JokeId(String);
 
 impl JokeId {
-    pub fn new(id: usize) -> Self {
-        Self(id.to_string())
+    pub fn new(id: &str) -> Self {
+        Self(id.to_owned())
     }
 }
 
@@ -18,8 +18,8 @@ pub struct Joke {
 }
 
 impl Joke {
-    pub fn new(id: usize, whos_there: &str, answer_who: &str, tags: &[&str]) -> Self {
-        let id = JokeId(id.to_string());
+    pub fn new(id: &str, whos_there: &str, answer_who: &str, tags: &[&str]) -> Self {
+        let id = JokeId(id.to_owned());
         let whos_there = whos_there.into();
         let answer_who = answer_who.into();
         let tags: HashSet<String> = tags.iter().copied().map(String::from).collect();
