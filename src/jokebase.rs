@@ -61,9 +61,14 @@ impl JokeBase {
         Ok(Self { _file: file, jokemap })
     }
 
-    pub fn get_random(&self) -> Joke {
-        let joke = fastrand::choice(self.jokemap.iter()).unwrap().1;
-        joke.to_owned()
+    pub fn get_random(&self) -> Option<Joke> {
+        let joke = fastrand::choice(self.jokemap.iter())?.1;
+        Some(joke.to_owned())
+    }
+
+    pub fn get(&self, index: &JokeId) -> Option<Joke> {
+        let joke = self.jokemap.get(index)?;
+        Some(joke.to_owned())
     }
 }
 

@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::collections::{HashMap, HashSet};
 
 use axum::{
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::get,
@@ -29,9 +29,23 @@ async fn jokes(State(jokebase): State<Arc<JokeBase>>) -> Response {
     jokebase.into_response()
 }
 
-async fn joke(State(jokebase): State<Arc<JokeBase>>) -> Response {
-    let joke = jokebase.get_random();
-    joke.into_response()
+async fn joke(
+    State(jokebase): State<Arc<JokeBase>>,
+) -> Response {
+    match jokebase.get_random() {
+        Some(joke) => joke.into_response(),
+        None => (StatusCode::NOT_FOUND, "404 Not Found").into_response(),
+    }
+}
+
+async fn get_joke(
+    State(jokebase): State<Arc<JokeBase>>,
+    Path(joke_id): Path<JokeId>,
+) -> Response {
+    match jokebase.get(&joke_id) {
+        Some(joke) => joke.into_response(),
+        None => (StatusCode::NOT_FOUND, "404 Not Found").into_response(),
+    }
 }
 
 async fn handler_404() -> Response {
@@ -60,6 +74,7 @@ async fn main() {
     let app = Router::new()
         .route("/jokes", get(jokes))
         .route("/joke", get(joke))
+        .route("/joke/:id", get(get_joke))
         .fallback(handler_404)
         .layer(trace_layer)
         .with_state(Arc::new(jokebase));
