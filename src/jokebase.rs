@@ -18,23 +18,52 @@ pub static JOKEBASE: &[(&str, &str, &[&str])] = &[
     ),
 ];
 
-pub struct JokeBase(HashMap<JokeId, Joke>);
+
+type JokeMap = HashMap<JokeId, Joke>;
+
+#[derive(Debug)]
+pub struct JokeBase {
+    _file: File,
+    jokemap: JokeMap,
+}
+
+fn default_jokemap() -> JokeMap {
+    JOKEBASE
+        .iter()
+        .enumerate()
+        .map(|(i, (l1, l2, tags))| {
+            (JokeId::new(i), Joke::new(i, l1, l2, tags))
+        })
+        .collect()
+}
 
 impl JokeBase {
-    pub fn new<P: AsRef<std::path::Path>>(_dbpath: P) -> Self {
-        let jokebase = JOKEBASE
-            .iter()
-            .enumerate()
-            .map(|(i, (l1, l2, tags))| {
-                (JokeId::new(i), Joke::new(i, l1, l2, tags))
+    pub fn new<P: AsRef<std::path::Path>>(db_path: P) -> Result<Self, std::io::Error> {
+        let mut file = File::create_new(&db_path)
+            .and_then(|mut f| {
+                let jokemap = default_jokemap();
+                let json = serde_json::to_string(&jokemap).unwrap();
+                f.write_all(json.as_bytes())?;
+                f.sync_all()?;
+                Ok(f)
             })
-            .collect();
-        Self(jokebase)
+            .or_else(|e| {
+                if e.kind() == ErrorKind::AlreadyExists {
+                    File::options().read(true).write(true).open(&db_path)
+                } else {
+                    Err(e)
+                }
+            })?;
+        file.rewind()?;
+        let json = std::io::read_to_string(&mut file)?;
+        let jokemap = serde_json::from_str(&json)
+            .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
+        Ok(Self { _file: file, jokemap })
     }
 }
 
 impl IntoResponse for &JokeBase {
     fn into_response(self) -> Response {
-        (StatusCode::OK, Json(&self.0)).into_response()
+        (StatusCode::OK, Json(&self.jokemap)).into_response()
     }
 }

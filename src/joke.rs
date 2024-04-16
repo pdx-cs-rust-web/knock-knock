@@ -1,6 +1,6 @@
 use crate::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct JokeId(String);
 
 impl JokeId {
@@ -9,7 +9,7 @@ impl JokeId {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Joke {
     id: JokeId,
     whos_there: String,

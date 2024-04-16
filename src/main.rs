@@ -4,6 +4,8 @@ mod jokebase;
 use joke::*;
 use jokebase::*;
 
+use std::fs::File;
+use std::io::{ErrorKind, Seek, Write};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::collections::{HashMap, HashSet};
@@ -15,7 +17,8 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
+extern crate serde_json;
 extern crate tokio;
 use tower_http::trace;
 extern crate tracing;
@@ -43,7 +46,11 @@ async fn main() {
         .make_span_with(trace::DefaultMakeSpan::new().level(tracing::Level::INFO))
         .on_response(trace::DefaultOnResponse::new().level(tracing::Level::INFO));
 
-    let jokebase = JokeBase::new("assets/jokebase.json");
+    let jokebase = JokeBase::new("assets/jokebase.json")
+        .unwrap_or_else(|e| {
+            tracing::error!("jokebase new: {}", e);
+            std::process::exit(1);
+        });
     let app = Router::new()
         .route("/jokes", get(jokes))
         .fallback(handler_404)
