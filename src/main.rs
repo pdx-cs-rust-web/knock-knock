@@ -84,11 +84,14 @@ async fn main() {
         });
     let jokebase = Arc::new(RwLock::new(jokebase));
     
-    let app = Router::new()
+    let apis = Router::new()
         .route("/jokes", get(jokes))
         .route("/joke", get(joke))
         .route("/joke/:id", get(get_joke))
-        .route("/joke/add", post(post_joke))
+        .route("/joke/add", post(post_joke));
+
+    let app = Router::new()
+        .nest("/api/v1", apis)
         .fallback(handler_404)
         .layer(trace_layer)
         .with_state(jokebase);
