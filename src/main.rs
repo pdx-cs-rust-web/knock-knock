@@ -1,6 +1,8 @@
+mod api;
 mod joke;
 mod jokebase;
 
+use api::*;
 use joke::*;
 use jokebase::*;
 
@@ -25,39 +27,6 @@ use tokio::{self, sync::RwLock};
 use tower_http::trace;
 extern crate tracing;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-async fn jokes(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
-    jokebase.read().await.into_response()
-}
-
-async fn joke(
-    State(jokebase): State<Arc<RwLock<JokeBase>>>,
-) -> Response {
-    match jokebase.read().await.get_random() {
-        Some(joke) => joke.into_response(),
-        None => (StatusCode::NOT_FOUND, "404 Not Found").into_response(),
-    }
-}
-
-async fn get_joke(
-    State(jokebase): State<Arc<RwLock<JokeBase>>>,
-    Path(joke_id): Path<JokeId>,
-) -> Response {
-    match jokebase.read().await.get(&joke_id) {
-        Some(joke) => joke.into_response(),
-        None => (StatusCode::NOT_FOUND, "404 Not Found").into_response(),
-    }
-}
-
-async fn post_joke(
-    State(jokebase): State<Arc<RwLock<JokeBase>>>,
-    Json(joke): Json<Joke>,
-) -> Response {
-    match jokebase.write().await.add(joke) {
-        Ok(()) => StatusCode::CREATED.into_response(),
-        Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
-    }
-}
 
 async fn handler_404() -> Response {
     (StatusCode::NOT_FOUND, "404 Not Found").into_response()
