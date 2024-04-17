@@ -1,26 +1,5 @@
 use crate::*;
 
-pub static JOKEBASE: &[(&str, &str, &str, &[&str])] = &[
-    (
-        "boo",
-        "Boo",
-        "You don't have to cry about it!",
-        &["kids", "oldie"],
-    ),
-    (
-        "cargo",
-        "Cargo",
-        "Car go beep.",
-        &["kids"],
-    ),
-    (
-        "dwayne",
-        "Dwayne",
-        "Dwayne the bathtub, I'm dwowning!",
-        &["kids", "oldie"],
-    ),
-];
-
 #[derive(Debug, thiserror::Error)]
 pub enum JokeBaseError {
     #[error("joke already exists: {0}")]
@@ -37,20 +16,11 @@ pub struct JokeBase {
     jokemap: JokeMap,
 }
 
-fn default_jokemap() -> JokeMap {
-    JOKEBASE
-        .iter()
-        .map(|(name, l1, l2, tags)| {
-            (JokeId::new(name), Joke::new(name, l1, l2, tags, None))
-        })
-        .collect()
-}
-
 impl JokeBase {
     pub fn new<P: AsRef<std::path::Path>>(db_path: P) -> Result<Self, std::io::Error> {
         let mut file = File::create_new(&db_path)
             .and_then(|mut f| {
-                let jokemap = default_jokemap();
+                let jokemap: JokeMap = HashMap::new();
                 let json = serde_json::to_string(&jokemap).unwrap();
                 f.write_all(json.as_bytes())?;
                 f.sync_all()?;
