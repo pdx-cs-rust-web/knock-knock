@@ -2,8 +2,8 @@ use crate::*;
 
 #[derive(Template)]
 #[template(path = "index.html")]
-pub struct IndexTemplate {
-    joke: Joke,
+pub struct IndexTemplate<'a> {
+    joke: &'a Joke,
 }
 
 pub async fn handler_index(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
