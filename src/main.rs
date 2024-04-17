@@ -1,10 +1,12 @@
 mod api;
 mod joke;
 mod jokebase;
+mod web;
 
 use api::*;
 use joke::*;
 use jokebase::*;
+use web::*;
 
 use std::fs::File;
 use std::io::{ErrorKind, Seek, Write};
@@ -12,6 +14,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::collections::{HashMap, HashSet};
 
+use askama::Template;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -69,6 +72,8 @@ async fn main() {
     let rapidoc_ui = RapiDoc::new("/api-docs/openapi.json").path("/rapidoc");
         
     let app = Router::new()
+        .route("/", get(handler_index))
+        .route("/index.html", get(handler_index))
         .merge(swagger_ui)
         .merge(redoc_ui)
         .merge(rapidoc_ui)

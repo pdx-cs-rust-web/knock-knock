@@ -22,9 +22,9 @@ pub struct Joke {
     #[schema(example = "boo")]
     id: JokeId,
     #[schema(example = "Boo")]
-    whos_there: String,
+    pub whos_there: String,
     #[schema(example = "You don't have to cry about it!")]
-    answer_who: String,
+    pub answer_who: String,
     #[schema(example = r#"["kids", "food"]"#)]
     #[serde(skip_serializing_if = "Option::is_none")]
     tags: Option<HashSet<String>>,
