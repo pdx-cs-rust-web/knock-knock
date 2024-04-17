@@ -15,3 +15,7 @@ tokio = { version = "1.37.0", features = ["full"] }
 tower-http = { version = "0.5.2", features = ["trace"] }
 tracing = { version = "0.1.40", features = ["async-await"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+utoipa = { version = "4.2.0", features = ["axum_extras"] }
+utoipa-rapidoc = { version = "3.0.0", features = ["axum"] }
+utoipa-redoc = { version = "3.0.0", features = ["axum"] }
+utoipa-swagger-ui = { version = "6.0.0", features = ["axum"] }

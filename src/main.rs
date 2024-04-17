@@ -27,6 +27,10 @@ use tokio::{self, sync::RwLock};
 use tower_http::trace;
 extern crate tracing;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use utoipa::{OpenApi, ToSchema};
+use utoipa_rapidoc::RapiDoc;
+use utoipa_redoc::{Redoc, Servable};
+use utoipa_swagger_ui::SwaggerUi;
 
 async fn handler_404() -> Response {
     (StatusCode::NOT_FOUND, "404 Not Found").into_response()
@@ -59,7 +63,15 @@ async fn main() {
         .route("/joke/:id", get(get_joke))
         .route("/joke/add", post(post_joke));
 
+    let swagger_ui = SwaggerUi::new("/swagger-ui")
+        .url("/api-docs/openapi.json", ApiDoc::openapi());
+    let redoc_ui = Redoc::with_url("/redoc", ApiDoc::openapi());
+    let rapidoc_ui = RapiDoc::new("/api-docs/openapi.json").path("/rapidoc");
+        
     let app = Router::new()
+        .merge(swagger_ui)
+        .merge(redoc_ui)
+        .merge(rapidoc_ui)
         .nest("/api/v1", apis)
         .fallback(handler_404)
         .layer(trace_layer)

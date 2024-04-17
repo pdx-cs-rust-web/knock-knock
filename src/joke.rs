@@ -1,6 +1,7 @@
 use crate::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash, ToSchema)]
+#[schema(example = "boo")]
 pub struct JokeId(String);
 
 impl JokeId {
@@ -16,13 +17,18 @@ impl std::fmt::Display for JokeId {
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Joke {
+    #[schema(example = "boo")]
     id: JokeId,
+    #[schema(example = "Boo")]
     whos_there: String,
+    #[schema(example = "You don't have to cry about it!")]
     answer_who: String,
+    #[schema(example = r#"["kids", "food"]"#)]
     #[serde(skip_serializing_if = "Option::is_none")]
     tags: Option<HashSet<String>>,
+    #[schema(example = "http://example.com/knock-knock-jokes")]
     #[serde(skip_serializing_if = "Option::is_none")]
     source: Option<String>,
 }
