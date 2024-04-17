@@ -54,6 +54,7 @@ impl JokeBase {
                 let json = serde_json::to_string(&jokemap).unwrap();
                 f.write_all(json.as_bytes())?;
                 f.sync_all()?;
+                f.rewind()?;
                 Ok(f)
             })
             .or_else(|e| {
@@ -63,7 +64,6 @@ impl JokeBase {
                     Err(e)
                 }
             })?;
-        file.rewind()?;
         let json = std::io::read_to_string(&mut file)?;
         let jokemap = serde_json::from_str(&json)
             .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
@@ -82,6 +82,8 @@ impl JokeBase {
 
     fn write_jokes(&mut self) -> Result<(), std::io::Error> {
         let json = serde_json::to_string(&self.jokemap).unwrap();
+        self.file.rewind()?;
+        self.file.set_len(0)?;
         self.file.write_all(json.as_bytes())?;
         self.file.sync_all()
     }
