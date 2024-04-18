@@ -21,7 +21,7 @@ pub struct ApiDoc;
 
 #[utoipa::path(
     get,
-    path = "/jokes",
+    path = "/api/v1/jokes",
     responses(
         (status = 200, description = "List jokes", body = [Joke])
     )
@@ -32,7 +32,7 @@ pub async fn jokes(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
 
 #[utoipa::path(
     get,
-    path = "/joke",
+    path = "/api/v1/joke",
     responses(
         (status = 200, description = "Return random joke", body = Joke),
         (status = 404, description = "Jokebase is empty", body = ()),
@@ -49,7 +49,7 @@ pub async fn joke(
 
 #[utoipa::path(
     get,
-    path = "/joke/:id",
+    path = "/api/v1/joke/:id",
     responses(
         (status = 200, description = "Return specified joke", body = Joke),
         (status = 404, description = "No joke with this id", body = ()),
@@ -67,7 +67,7 @@ pub async fn get_joke(
 
 #[utoipa::path(
     post,
-    path = "/joke/add",
+    path = "/api/v1/joke/add",
     responses(
         (status = 200, description = "Added joke", body = ()),
         (status = 400, description = "Joke add failed", body = ()),
