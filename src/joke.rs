@@ -1,41 +1,24 @@
 use crate::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash, ToSchema)]
-#[schema(example = "boo")]
-pub struct JokeId(String);
-
-impl JokeId {
-    pub fn new(id: &str) -> Self {
-        Self(id.to_owned())
-    }
-}
-
-impl std::fmt::Display for JokeId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(f, "{}", self.0)
-    }
-}
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Joke {
     #[schema(example = "boo")]
-    id: JokeId,
+    pub id: String,
     #[schema(example = "Boo")]
     pub whos_there: String,
     #[schema(example = "You don't have to cry about it!")]
     pub answer_who: String,
     #[schema(example = r#"["kids", "food"]"#)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    tags: Option<HashSet<String>>,
+    pub tags: Option<HashSet<String>>,
     #[schema(example = "http://example.com/knock-knock-jokes")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    source: Option<String>,
+    pub source: Option<String>,
 }
 
 impl Joke {
     pub fn new(id: &str, whos_there: &str, answer_who: &str, tags: &[&str], source: Option<&str>) -> Self {
-        let id = JokeId(id.to_owned());
+        let id = id.into();
         let whos_there = whos_there.into();
         let answer_who = answer_who.into();
         let tags: Option<HashSet<String>> = if tags.is_empty() {
@@ -51,10 +34,6 @@ impl Joke {
             tags,
             source,
         }
-    }
-
-    pub fn id(&self) -> &JokeId {
-        &self.id
     }
 }
 

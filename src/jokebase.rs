@@ -3,12 +3,12 @@ use crate::*;
 #[derive(Debug, thiserror::Error)]
 pub enum JokeBaseError {
     #[error("joke already exists: {0}")]
-    JokeExists(JokeId),
+    JokeExists(String),
     #[error("jokebase write: {0}")]
     JokeFileWrite(#[from] std::io::Error),
 }
 
-type JokeMap = HashMap<JokeId, Joke>;
+type JokeMap = HashMap<String, Joke>;
 
 #[derive(Debug)]
 pub struct JokeBase {
@@ -44,7 +44,7 @@ impl JokeBase {
         fastrand::choice(self.jokemap.iter()).map(|x| x.1)
     }
 
-    pub fn get(&self, index: &JokeId) -> Option<&Joke> {
+    pub fn get<'a>(&'a self, index: &str) -> Option<&'a Joke> {
         self.jokemap.get(index)
     }
 
@@ -57,7 +57,7 @@ impl JokeBase {
     }
 
     pub fn add(&mut self, joke: Joke) -> Result<(), JokeBaseError> {
-        let id = joke.id().clone();
+        let id = joke.id.clone();
         if self.jokemap.get(&id).is_some() {
             return Err(JokeBaseError::JokeExists(id));
         }

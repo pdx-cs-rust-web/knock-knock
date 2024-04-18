@@ -57,7 +57,7 @@ pub async fn joke(
 )]
 pub async fn get_joke(
     State(jokebase): State<Arc<RwLock<JokeBase>>>,
-    Path(joke_id): Path<JokeId>,
+    Path(joke_id): Path<String>,
 ) -> Response {
     match jokebase.read().await.get(&joke_id) {
         Some(joke) => joke.into_response(),
