@@ -8,6 +8,8 @@ pub enum JokeBaseErr {
     JokeBaseIoError(String),
     #[error("no joke")]
     NoJoke,
+    #[error("joke {0} doesn't exist")]
+    JokeDoesNotExists(String),
 }
 
 impl From<std::io::Error> for JokeBaseErr {
@@ -114,6 +116,15 @@ impl JokeBase {
         self.jokemap.insert(id, joke);
         self.write_jokes()?;
         Ok(())
+    }
+
+    pub fn delete(&mut self, given_id: String) -> Result<(), JokeBaseErr> {
+        if self.jokemap.contains_key(&given_id) == false {
+            return Err(JokeBaseErr::JokeDoesNotExists(given_id));
+        } else {
+            self.jokemap.remove(&given_id);
+            Ok(())
+        }
     }
 }
 
