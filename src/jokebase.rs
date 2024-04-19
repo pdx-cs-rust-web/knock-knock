@@ -123,6 +123,7 @@ impl JokeBase {
             return Err(JokeBaseErr::JokeDoesNotExists(given_id));
         } else {
             self.jokemap.remove(&given_id);
+            self.write_jokes()?;
             Ok(())
         }
     }
