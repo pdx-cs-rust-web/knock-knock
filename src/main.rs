@@ -4,6 +4,7 @@ mod jokebase;
 mod web;
 
 use api::*;
+use axum::routing::delete;
 use joke::*;
 use jokebase::*;
 use web::*;
@@ -67,7 +68,8 @@ async fn main() {
         .route("/jokes", get(jokes))
         .route("/joke", get(joke))
         .route("/joke/:id", get(get_joke))
-        .route("/joke/add", post(post_joke));
+        .route("/joke/add", post(post_joke))
+        .route("/joke/:id", delete(delete_joke));
 
     let swagger_ui = SwaggerUi::new("/swagger-ui")
         .url("/api-docs/openapi.json", ApiDoc::openapi());
