@@ -17,7 +17,13 @@ pub struct Joke {
 }
 
 impl Joke {
-    pub fn new(id: &str, whos_there: &str, answer_who: &str, tags: &[&str], source: Option<&str>) -> Self {
+    pub fn new(
+        id: &str,
+        whos_there: &str,
+        answer_who: &str,
+        tags: &[&str],
+        source: Option<&str>,
+    ) -> Self {
         let id = id.into();
         let whos_there = whos_there.into();
         let answer_who = answer_who.into();

@@ -27,8 +27,14 @@ pub struct JokeBaseError {
 impl<'s> ToSchema<'s> for JokeBaseError {
     fn schema() -> (&'s str, RefOr<Schema>) {
         let sch = ObjectBuilder::new()
-            .property("status", ObjectBuilder::new().schema_type(SchemaType::String))
-            .property("error", ObjectBuilder::new().schema_type(SchemaType::String))
+            .property(
+                "status",
+                ObjectBuilder::new().schema_type(SchemaType::String),
+            )
+            .property(
+                "error",
+                ObjectBuilder::new().schema_type(SchemaType::String),
+            )
             .example(Some(serde_json::json!({
                 "status":"404","error":"no joke"
             })))
@@ -40,7 +46,7 @@ impl<'s> ToSchema<'s> for JokeBaseError {
 impl Serialize for JokeBaseError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: Serializer
+        S: Serializer,
     {
         let status: String = self.status.to_string();
         let mut state = serializer.serialize_struct("JokeBaseError", 2)?;
@@ -52,10 +58,7 @@ impl Serialize for JokeBaseError {
 
 impl JokeBaseError {
     pub fn response(status: StatusCode, error: JokeBaseErr) -> Response {
-        let error = JokeBaseError {
-            status,
-            error,
-        };
+        let error = JokeBaseError { status, error };
         (status, Json(error)).into_response()
     }
 }
@@ -97,7 +100,9 @@ impl JokeBase {
     }
 
     pub fn get<'a>(&'a self, index: &str) -> Result<&'a Joke, JokeBaseErr> {
-        self.jokemap.get(index).ok_or(JokeBaseErr::JokeDoesNotExist(index.to_string()))
+        self.jokemap
+            .get(index)
+            .ok_or(JokeBaseErr::JokeDoesNotExist(index.to_string()))
     }
 
     fn write_jokes(&mut self) -> Result<(), std::io::Error> {
