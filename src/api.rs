@@ -9,6 +9,7 @@ use crate::*;
         joke,
         get_joke,
         post_joke,
+        delete_joke,
     ),
     components(
         schemas(Joke, JokeBaseError)
@@ -84,5 +85,23 @@ pub async fn post_joke(
     match jokebase.write().await.add(joke) {
         Ok(()) => StatusCode::CREATED.into_response(),
         Err(e) => JokeBaseError::response(StatusCode::BAD_REQUEST, e),
+    }
+}
+
+#[utoipa::path(
+    delete,
+    path = "/joke/:id",
+    responses(
+        (status = 200, description = "Deleted joke", body = ()),
+        (status = 400, description = "Joke delete fail", body = ()),
+    )
+)]
+pub async fn delete_joke(
+    State(jokebase): State<Arc<RwLock<JokeBase>>>,
+    Path(joke_id): Path<String>,
+) -> Response {
+    match jokebase.write().await.delete(joke_id) {
+        Ok(()) => StatusCode::CREATED.into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
     }
 }
