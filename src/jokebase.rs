@@ -9,7 +9,7 @@ pub enum JokeBaseErr {
     #[error("no joke")]
     NoJoke,
     #[error("joke {0} doesn't exist")]
-    JokeDoesNotExists(String),
+    JokeDoesNotExist(String),
 }
 
 impl From<std::io::Error> for JokeBaseErr {
@@ -96,8 +96,8 @@ impl JokeBase {
         fastrand::choice(self.jokemap.iter()).map(|x| x.1)
     }
 
-    pub fn get<'a>(&'a self, index: &str) -> Option<&'a Joke> {
-        self.jokemap.get(index)
+    pub fn get<'a>(&'a self, index: &str) -> Result<&'a Joke, JokeBaseErr> {
+        self.jokemap.get(index).ok_or(JokeBaseErr::JokeDoesNotExist(index.to_string()))
     }
 
     fn write_jokes(&mut self) -> Result<(), std::io::Error> {
@@ -118,14 +118,13 @@ impl JokeBase {
         Ok(())
     }
 
-    pub fn delete(&mut self, given_id: String) -> Result<(), JokeBaseErr> {
-        if self.jokemap.contains_key(&given_id) == false {
-            return Err(JokeBaseErr::JokeDoesNotExists(given_id));
-        } else {
-            self.jokemap.remove(&given_id);
-            self.write_jokes()?;
-            Ok(())
+    pub fn delete(&mut self, index: &str) -> Result<(), JokeBaseErr> {
+        if !self.jokemap.contains_key(index) {
+            return Err(JokeBaseErr::JokeDoesNotExist(index.to_string()));
         }
+        self.jokemap.remove(index);
+        self.write_jokes()?;
+        Ok(())
     }
 }
 
