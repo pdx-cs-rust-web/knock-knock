@@ -39,9 +39,7 @@ pub async fn jokes(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
         (status = 404, description = "Jokebase is empty", body = JokeBaseError)
     )
 )]
-pub async fn joke(
-    State(jokebase): State<Arc<RwLock<JokeBase>>>,
-) -> Response {
+pub async fn joke(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
     match jokebase.read().await.get_random() {
         Some(joke) => joke.into_response(),
         None => JokeBaseError::response(StatusCode::NOT_FOUND, JokeBaseErr::NoJoke),
