@@ -39,6 +39,8 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
+const STYLESHEET: &str = "assets/static/knock-knock.css";
+
 async fn handler_404() -> Response {
     (StatusCode::NOT_FOUND, "404 Not Found").into_response()
 }
@@ -66,6 +68,9 @@ async fn main() {
     let mime_type = core::str::FromStr::from_str("image/vnd.microsoft.icon").unwrap();
     let favicon = services::ServeFile::new_with_mime("assets/static/favicon.ico", &mime_type);
 
+    let mime_type = core::str::FromStr::from_str("text/css").unwrap();
+    let stylesheet = services::ServeFile::new_with_mime(STYLESHEET, &mime_type);
+
     let apis = Router::new()
         .route("/jokes", get(jokes))
         .route("/joke", get(joke))
@@ -80,6 +85,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(handler_index))
         .route("/index.html", get(handler_index))
+        .route_service("/knock-knock.css", stylesheet)
         .route_service("/favicon.ico", favicon)
         .merge(swagger_ui)
         .merge(redoc_ui)
