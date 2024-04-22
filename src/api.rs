@@ -61,8 +61,8 @@ pub async fn get_joke(
     Path(joke_id): Path<String>,
 ) -> Response {
     match jokebase.read().await.get(&joke_id) {
-        Some(joke) => joke.into_response(),
-        None => JokeBaseError::response(StatusCode::NOT_FOUND, JokeBaseErr::NoJoke),
+        Ok(joke) => joke.into_response(),
+        Err(e) => JokeBaseError::response(StatusCode::NOT_FOUND, e),
     }
 }
 
@@ -75,7 +75,7 @@ pub async fn get_joke(
     ),
     responses(
         (status = 200, description = "Added joke", body = ()),
-        (status = 400, description = "Joke add failed", body = JokeBaseError)
+        (status = 400, description = "Bad request", body = JokeBaseError)
     )
 )]
 pub async fn post_joke(
@@ -90,18 +90,18 @@ pub async fn post_joke(
 
 #[utoipa::path(
     delete,
-    path = "/joke/:id",
+    path = "/api/v1/joke/{id}",
     responses(
         (status = 200, description = "Deleted joke", body = ()),
-        (status = 400, description = "Joke delete fail", body = ()),
+        (status = 400, description = "Bad request", body = JokeBaseError),
     )
 )]
 pub async fn delete_joke(
     State(jokebase): State<Arc<RwLock<JokeBase>>>,
     Path(joke_id): Path<String>,
 ) -> Response {
-    match jokebase.write().await.delete(joke_id) {
-        Ok(()) => StatusCode::CREATED.into_response(),
-        Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
+    match jokebase.write().await.delete(&joke_id) {
+        Ok(()) => StatusCode::OK.into_response(),
+        Err(e) => JokeBaseError::response(StatusCode::BAD_REQUEST, e),
     }
 }

@@ -4,7 +4,6 @@ mod jokebase;
 mod web;
 
 use api::*;
-use axum::routing::delete;
 use joke::*;
 use jokebase::*;
 use web::*;
@@ -20,7 +19,7 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 extern crate fastrand;
