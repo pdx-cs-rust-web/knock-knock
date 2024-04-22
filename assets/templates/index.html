@@ -1,14 +1,15 @@
 <html>
   <head>
     <title>Knock-Knock</title>
+    <link rel="stylesheet" href="{{stylesheet}}">
   </head>
   <body>
     <p>
-      Knock-Knock!<br/>
-      Who's there?<br/>
-      {{joke.whos_there}}<br/>
-      {{joke.whos_there}} who?<br/>
-      {{joke.answer_who}}<br/>
+      <span class="teller">Knock-Knock!</span><br/>
+      <span class="tellee">Who's there?</span><br/>
+      <span class="teller">{{joke.whos_there}}</span><br/>
+      <span class="tellee">{{joke.whos_there}} who?</span><br/>
+      <span class="teller">{{joke.answer_who}}</span><br/>
     </p>
   </body>
 </html>
