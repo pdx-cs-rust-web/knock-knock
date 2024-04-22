@@ -1,11 +1,50 @@
 use crate::*;
 
-#[derive(Debug, thiserror::Error)]
-pub enum JokeBaseError {
+#[derive(Debug, thiserror::Error, ToSchema, Serialize)]
+pub enum JokeBaseErr {
     #[error("joke already exists: {0}")]
     JokeExists(String),
-    #[error("jokebase write: {0}")]
-    JokeFileWrite(#[from] std::io::Error),
+    #[error("jokebase io failed: {0}")]
+    JokeBaseIoError(String),
+    #[error("no joke")]
+    NoJoke,
+}
+
+impl From<std::io::Error> for JokeBaseErr {
+    fn from(e: std::io::Error) -> Self {
+        JokeBaseErr::JokeBaseIoError(e.to_string())
+    }
+}
+
+#[derive(Debug, ToSchema)]
+pub struct JokeBaseError {
+    #[schema(example = "404")]
+    pub status: StatusCode,
+    #[schema(example = "no joke")]
+    pub error: JokeBaseErr,
+}
+
+impl Serialize for JokeBaseError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer
+    {
+        let status: String = self.status.to_string();
+        let mut state = serializer.serialize_struct("JokeBaseError", 2)?;
+        state.serialize_field("status", &status)?;
+        state.serialize_field("error", &self.error)?;
+        state.end()
+    }
+}
+
+impl JokeBaseError {
+    pub fn response(status: StatusCode, error: JokeBaseErr) -> Response {
+        let error = JokeBaseError {
+            status,
+            error,
+        };
+        (status, Json(error)).into_response()
+    }
 }
 
 type JokeMap = HashMap<String, Joke>;
@@ -56,10 +95,10 @@ impl JokeBase {
         self.file.sync_all()
     }
 
-    pub fn add(&mut self, joke: Joke) -> Result<(), JokeBaseError> {
+    pub fn add(&mut self, joke: Joke) -> Result<(), JokeBaseErr> {
         let id = joke.id.clone();
         if self.jokemap.get(&id).is_some() {
-            return Err(JokeBaseError::JokeExists(id));
+            return Err(JokeBaseErr::JokeExists(id));
         }
         self.jokemap.insert(id, joke);
         self.write_jokes()?;

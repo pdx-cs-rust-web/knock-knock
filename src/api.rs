@@ -11,7 +11,7 @@ use crate::*;
         post_joke,
     ),
     components(
-        schemas(Joke)
+        schemas(Joke, JokeBaseError)
     ),
     tags(
         (name = "knock-knock", description = "Knock-Knock Joke API")
@@ -35,7 +35,7 @@ pub async fn jokes(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
     path = "/api/v1/joke",
     responses(
         (status = 200, description = "Return random joke", body = Joke),
-        (status = 404, description = "Jokebase is empty", body = ()),
+        (status = 404, description = "Jokebase is empty", body = JokeBaseError)
     )
 )]
 pub async fn joke(
@@ -43,16 +43,16 @@ pub async fn joke(
 ) -> Response {
     match jokebase.read().await.get_random() {
         Some(joke) => joke.into_response(),
-        None => (StatusCode::NOT_FOUND, "404 Not Found").into_response(),
+        None => JokeBaseError::response(StatusCode::NOT_FOUND, JokeBaseErr::NoJoke),
     }
 }
 
 #[utoipa::path(
     get,
-    path = "/api/v1/joke/:id",
+    path = "/api/v1/joke/{id}",
     responses(
         (status = 200, description = "Return specified joke", body = Joke),
-        (status = 404, description = "No joke with this id", body = ()),
+        (status = 404, description = "No joke with this id", body = JokeBaseError),
     )
 )]
 pub async fn get_joke(
@@ -61,16 +61,20 @@ pub async fn get_joke(
 ) -> Response {
     match jokebase.read().await.get(&joke_id) {
         Some(joke) => joke.into_response(),
-        None => (StatusCode::NOT_FOUND, "404 Not Found").into_response(),
+        None => JokeBaseError::response(StatusCode::NOT_FOUND, JokeBaseErr::NoJoke),
     }
 }
 
 #[utoipa::path(
     post,
     path = "/api/v1/joke/add",
+    request_body(
+        content = inline(Joke),
+        description = "Joke to add"
+    ),
     responses(
         (status = 200, description = "Added joke", body = ()),
-        (status = 400, description = "Joke add failed", body = ()),
+        (status = 400, description = "Joke add failed", body = JokeBaseError)
     )
 )]
 pub async fn post_joke(
@@ -79,6 +83,6 @@ pub async fn post_joke(
 ) -> Response {
     match jokebase.write().await.add(joke) {
         Ok(()) => StatusCode::CREATED.into_response(),
-        Err(e) => (StatusCode::BAD_REQUEST, e.to_string()).into_response(),
+        Err(e) => JokeBaseError::response(StatusCode::BAD_REQUEST, e),
     }
 }
