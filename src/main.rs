@@ -14,7 +14,6 @@ use std::io::{ErrorKind, Seek, Write};
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use askama::Template;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
