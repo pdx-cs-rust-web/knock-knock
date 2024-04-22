@@ -27,7 +27,7 @@ use serde::{Serialize, Serializer, ser::SerializeStruct, Deserialize};
 extern crate serde_json;
 extern crate thiserror;
 use tokio::{self, sync::RwLock};
-use tower_http::trace;
+use tower_http::{services, trace};
 extern crate tracing;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::{OpenApi, ToSchema, openapi::schema::{ObjectBuilder, Schema, SchemaType}, openapi::RefOr};
@@ -60,6 +60,9 @@ async fn main() {
         });
     let jokebase = Arc::new(RwLock::new(jokebase));
     
+    let mime_type = core::str::FromStr::from_str("image/vnd.microsoft.icon").unwrap();
+    let favicon = services::ServeFile::new_with_mime("assets/static/favicon.ico", &mime_type);
+
     let apis = Router::new()
         .route("/jokes", get(jokes))
         .route("/joke", get(joke))
@@ -74,6 +77,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(handler_index))
         .route("/index.html", get(handler_index))
+        .route_service("/favicon.ico", favicon)
         .merge(swagger_ui)
         .merge(redoc_ui)
         .merge(rapidoc_ui)
