@@ -16,12 +16,23 @@ impl From<std::io::Error> for JokeBaseErr {
     }
 }
 
-#[derive(Debug, ToSchema)]
+#[derive(Debug)]
 pub struct JokeBaseError {
-    #[schema(example = "404")]
     pub status: StatusCode,
-    #[schema(example = "no joke")]
     pub error: JokeBaseErr,
+}
+
+impl<'s> ToSchema<'s> for JokeBaseError {
+    fn schema() -> (&'s str, RefOr<Schema>) {
+        let sch = ObjectBuilder::new()
+            .property("status", ObjectBuilder::new().schema_type(SchemaType::String))
+            .property("error", ObjectBuilder::new().schema_type(SchemaType::String))
+            .example(Some(serde_json::json!({
+                "status":"404","error":"no joke"
+            })))
+            .into();
+        ("JokeBaseError", sch)
+    }
 }
 
 impl Serialize for JokeBaseError {

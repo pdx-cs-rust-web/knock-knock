@@ -30,7 +30,7 @@ use tokio::{self, sync::RwLock};
 use tower_http::trace;
 extern crate tracing;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use utoipa::{OpenApi, ToSchema};
+use utoipa::{OpenApi, ToSchema, openapi::schema::{ObjectBuilder, Schema, SchemaType}, openapi::RefOr};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
