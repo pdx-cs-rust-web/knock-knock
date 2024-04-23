@@ -116,6 +116,7 @@ pub async fn delete_joke(
         (status = 200, description = "Updated joke", body = ()),
         (status = 201, description = "Added joke", body = ()),
         (status = 400, description = "Bad request", body = JokeBaseError),
+        (status = 422, description = "Unprocessable entity", body = JokeBaseError),
     )
 )]
 pub async fn update_joke(
@@ -124,13 +125,12 @@ pub async fn update_joke(
     Json(joke): Json<Joke>,
 ) -> Response {
     match jokebase.write().await.update(&joke_id, joke) {
-        Ok(res) => {
-            if res == 200 {
-                StatusCode::OK.into_response()
-            } else {
-                StatusCode::CREATED.into_response()
-            }
-        }
+        Ok(StatusCode::CREATED) => StatusCode::CREATED.into_response(),
+        Ok(_) => StatusCode::OK.into_response(),
+        Err(JokeBaseErr::JokeUnprocessable(e)) => JokeBaseError::response(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            JokeBaseErr::JokeUnprocessable(e),
+        ),
         Err(e) => JokeBaseError::response(StatusCode::BAD_REQUEST, e),
     }
 }

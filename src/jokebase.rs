@@ -10,6 +10,8 @@ pub enum JokeBaseErr {
     NoJoke,
     #[error("joke {0} doesn't exist")]
     JokeDoesNotExist(String),
+    #[error("joke payload unprocessable")]
+    JokeUnprocessable(String),
 }
 
 impl From<std::io::Error> for JokeBaseErr {
@@ -132,18 +134,21 @@ impl JokeBase {
         Ok(())
     }
 
-    pub fn update(&mut self, index: &str, joke: Joke) -> Result<u8, JokeBaseErr> {
+    pub fn update(&mut self, index: &str, joke: Joke) -> Result<StatusCode, JokeBaseErr> {
         if !self.jokemap.contains_key(index) {
             return match self.add(joke) {
-                Ok(()) => Ok(201),
+                Ok(()) => Ok(StatusCode::CREATED),
                 Err(e) => Err(e),
             };
+        }
+        if joke.id.is_empty() {
+            return Err(JokeBaseErr::JokeUnprocessable(index.to_string()));
         }
         self.jokemap
             .entry(index.to_string())
             .and_modify(|x| *x = joke);
         self.write_jokes()?;
-        Ok(200)
+        Ok(StatusCode::OK)
     }
 }
 
