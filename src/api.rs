@@ -10,6 +10,7 @@ use crate::*;
         get_joke,
         post_joke,
         delete_joke,
+        update_joke,
     ),
     components(
         schemas(Joke, JokeBaseError)
@@ -99,6 +100,30 @@ pub async fn delete_joke(
     Path(joke_id): Path<String>,
 ) -> Response {
     match jokebase.write().await.delete(&joke_id) {
+        Ok(()) => StatusCode::OK.into_response(),
+        Err(e) => JokeBaseError::response(StatusCode::BAD_REQUEST, e),
+    }
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/v1/joke/{id}",
+    request_body(
+        content = inline(Joke),
+        description = "Joke to update"
+    ),
+    responses(
+        (status = 200, description = "Updated joke", body = ()),
+        (status = 201, description = "Added joke", body = ()),
+        (status = 400, description = "Bad request", body = JokeBaseError),
+    )
+)]
+pub async fn update_joke(
+    State(jokebase): State<Arc<RwLock<JokeBase>>>,
+    Path(joke_id): Path<String>,
+    Json(joke): Json<Joke>,
+) -> Response {
+    match jokebase.write().await.update(&joke_id, joke) {
         Ok(()) => StatusCode::OK.into_response(),
         Err(e) => JokeBaseError::response(StatusCode::BAD_REQUEST, e),
     }
