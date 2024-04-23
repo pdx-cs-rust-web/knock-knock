@@ -132,15 +132,18 @@ impl JokeBase {
         Ok(())
     }
 
-    pub fn update(&mut self, index: &str, joke: Joke) -> Result<(), JokeBaseErr> {
+    pub fn update(&mut self, index: &str, joke: Joke) -> Result<u8, JokeBaseErr> {
         if !self.jokemap.contains_key(index) {
-            return self.add(joke);
+            return match self.add(joke) {
+                Ok(()) => Ok(201),
+                Err(e) => Err(e),
+            };
         }
         self.jokemap
             .entry(index.to_string())
             .and_modify(|x| *x = joke);
         self.write_jokes()?;
-        Ok(())
+        Ok(200)
     }
 }
 
