@@ -136,10 +136,7 @@ impl JokeBase {
 
     pub fn update(&mut self, index: &str, joke: Joke) -> Result<StatusCode, JokeBaseErr> {
         if !self.jokemap.contains_key(index) {
-            return match self.add(joke) {
-                Ok(()) => Ok(StatusCode::CREATED),
-                Err(e) => Err(e),
-            };
+            return Err(JokeBaseErr::NoJoke);
         }
         if joke.id.is_empty() {
             return Err(JokeBaseErr::JokeUnprocessable(index.to_string()));
