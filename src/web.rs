@@ -16,9 +16,25 @@ impl<'a> IndexTemplate<'a> {
     }
 }
 
-pub async fn handler_index(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
-    match jokebase.read().await.get_random() {
-        Some(joke) => (StatusCode::OK, IndexTemplate::new(joke)).into_response(),
-        None => (StatusCode::NOT_FOUND, "404 Not Found").into_response(),
+#[derive(Deserialize)]
+pub struct IndexParams {
+    id: Option<String>,
+}
+
+pub async fn handler_index(
+    State(jokebase): State<Arc<RwLock<JokeBase>>>,
+    Query(params): Query<IndexParams>,
+) -> Response {
+    let jokebase = jokebase.read().await;
+
+    let joke = if let Some(id) = params.id {
+        jokebase.get(&id)
+    } else {
+        jokebase.get_random()
+    };
+
+    match joke {
+        Ok(joke) => (StatusCode::OK, IndexTemplate::new(joke)).into_response(),
+        Err(e) => (StatusCode::NO_CONTENT, e.to_string()).into_response(),
     }
 }
