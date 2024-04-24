@@ -19,7 +19,7 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
     Json, Router,
 };
 extern crate fastrand;
@@ -76,7 +76,8 @@ async fn main() {
         .route("/joke", get(joke))
         .route("/joke/:id", get(get_joke))
         .route("/joke/add", post(post_joke))
-        .route("/joke/:id", delete(delete_joke));
+        .route("/joke/:id", delete(delete_joke))
+        .route("/joke/:id", put(update_joke));
 
     let swagger_ui = SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi());
     let redoc_ui = Redoc::with_url("/redoc", ApiDoc::openapi());
