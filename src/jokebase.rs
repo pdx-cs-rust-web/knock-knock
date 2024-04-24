@@ -97,8 +97,10 @@ impl JokeBase {
         Ok(Self { file, jokemap })
     }
 
-    pub fn get_random(&self) -> Option<&Joke> {
-        fastrand::choice(self.jokemap.iter()).map(|x| x.1)
+    pub fn get_random(&self) -> Result<&Joke, JokeBaseErr> {
+        let (_, joke) = fastrand::choice(self.jokemap.iter())
+            .ok_or(JokeBaseErr::NoJoke)?;
+        Ok(joke)
     }
 
     pub fn get<'a>(&'a self, index: &str) -> Result<&'a Joke, JokeBaseErr> {

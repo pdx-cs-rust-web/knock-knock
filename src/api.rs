@@ -37,13 +37,13 @@ pub async fn jokes(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
     path = "/api/v1/joke",
     responses(
         (status = 200, description = "Return random joke", body = Joke),
-        (status = 404, description = "Jokebase is empty", body = JokeBaseError)
+        (status = 204, description = "Jokebase is empty", body = JokeBaseError)
     )
 )]
 pub async fn joke(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
     match jokebase.read().await.get_random() {
-        Some(joke) => joke.into_response(),
-        None => JokeBaseError::response(StatusCode::NOT_FOUND, JokeBaseErr::NoJoke),
+        Ok(joke) => joke.into_response(),
+        Err(e) => JokeBaseError::response(StatusCode::NO_CONTENT, e),
     }
 }
 
@@ -52,7 +52,7 @@ pub async fn joke(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
     path = "/api/v1/joke/{id}",
     responses(
         (status = 200, description = "Return specified joke", body = Joke),
-        (status = 404, description = "No joke with this id", body = JokeBaseError),
+        (status = 204, description = "No joke with this id", body = JokeBaseError),
     )
 )]
 pub async fn get_joke(
@@ -61,7 +61,7 @@ pub async fn get_joke(
 ) -> Response {
     match jokebase.read().await.get(&joke_id) {
         Ok(joke) => joke.into_response(),
-        Err(e) => JokeBaseError::response(StatusCode::NOT_FOUND, e),
+        Err(e) => JokeBaseError::response(StatusCode::NO_CONTENT, e),
     }
 }
 
