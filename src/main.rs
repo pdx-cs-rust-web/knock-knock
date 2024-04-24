@@ -86,6 +86,8 @@ async fn main() {
     let app = Router::new()
         .route("/", get(handler_index))
         .route("/index.html", get(handler_index))
+        .route("/tell", get(handler_tell))
+        .route("/add", get(handler_add))
         .route_service("/knock-knock.css", stylesheet)
         .route_service("/favicon.ico", favicon)
         .merge(swagger_ui)
