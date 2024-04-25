@@ -30,7 +30,10 @@ pub async fn handler_index(
     let joke = if let Some(id) = params.id {
         jokebase.get(&id)
     } else {
-        jokebase.get_random()
+        match jokebase.get_random() {
+            Ok(joke) => return Redirect::to(&format!("/?id={}", joke.id)).into_response(),
+            e => e,
+        }
     };
 
     match joke {
