@@ -18,7 +18,7 @@ use askama::Template;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Response, Redirect},
     routing::{delete, get, post, put},
     Json, Router,
 };

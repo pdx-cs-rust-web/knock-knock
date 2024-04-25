@@ -76,7 +76,7 @@ pub async fn handler_add(
 ) -> Response {
     // XXX Condition user input.
     let joke = Joke {
-        id: params.id,
+        id: params.id.clone(),
         whos_there: params.who,
         answer_who: params.answer,
         tags: parse_tags(params.tags),
@@ -86,7 +86,8 @@ pub async fn handler_add(
     let mut jokebase = jokebase.write().await;
 
     match jokebase.add(joke) {
-        Ok(()) => (StatusCode::OK, "".to_string()).into_response(),
+        Ok(()) =>
+            Redirect::to(&format!("/?id={}", params.id)).into_response(),
         Err(JokeBaseErr::JokeBaseIoError(msg)) =>
             (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response(),
         Err(JokeBaseErr::JokeExists(id)) =>
