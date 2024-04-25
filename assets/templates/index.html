@@ -12,6 +12,12 @@
       <span class="tellee">{{joke.whos_there}} who?</span><br/>
       <span class="teller">{{joke.answer_who}}</span><br/>
   </div>
+  <span class="annotation">
+    [id: {{joke.id -}}
+    {%- if let Some(tags) = tags -%}; tags={{- tags -}}{%- endif -%}
+    {%- if let Some(source) = joke.source %}; source={{- source -}}{%- endif -%}
+    ]
+  </span><br/>
   <form method="get" action="/">
   <input type="submit" value="Tell me another!"/>
   </form>

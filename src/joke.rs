@@ -43,6 +43,11 @@ impl Joke {
     }
 }
 
+pub fn format_tags(tags: &HashSet<String>) -> String {
+    let taglist: Vec<&str> = tags.iter().map(String::as_ref).collect();
+    taglist.join(", ")
+}
+
 impl From<&Joke> for String {
     fn from(joke: &Joke) -> Self {
         let mut text: String = "Knock knock!\n".into();
@@ -54,9 +59,7 @@ impl From<&Joke> for String {
 
         let mut annote: Vec<String> = vec![format!("id: {}", joke.id)];
         if let Some(tags) = &joke.tags {
-            let taglist: Vec<&str> = tags.iter().map(String::as_ref).collect();
-            let taglist = taglist.join(", ");
-            annote.push(format!("tags: {}", taglist));
+            annote.push(format!("tags: {}", format_tags(tags)));
         }
         if let Some(source) = &joke.source {
             annote.push(format!(r#"source: "{}""#, source));
