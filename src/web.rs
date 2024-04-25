@@ -70,9 +70,25 @@ pub struct AddParams {
 }
 
 fn parse_tags(tags: Option<String>) -> Option<HashSet<String>> {
-    tags.map(|tags| {
-        tags.split(',').map(str::trim).map(str::to_string).collect()
-    })
+    let tags = tags?;
+    if tags.is_empty() {
+        return None;
+    }
+    let tags: HashSet<String> = tags.split(',').map(str::trim).map(str::to_string).collect();
+    if tags.is_empty() {
+        None
+    } else {
+        Some(tags)
+    }
+}
+
+fn parse_source(source: Option<String>) -> Option<String> {
+    let source = source?;
+    if source.is_empty() {
+        None
+    } else {
+        Some(source)
+    }
 }
 
 pub async fn handler_add(
@@ -85,7 +101,7 @@ pub async fn handler_add(
         whos_there: params.who,
         answer_who: params.answer,
         tags: parse_tags(params.tags),
-        source: params.source,
+        source: parse_source(params.source),
     };
 
     let mut jokebase = jokebase.write().await;
