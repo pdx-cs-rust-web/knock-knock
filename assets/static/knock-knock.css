@@ -6,6 +6,11 @@
     font-style: italic;
 }
 
+.annotation {
+    font-style: italic;
+    font-size: 60%;
+}
+
 h1 {
     font-weight: bold;
     font-size: 150%;

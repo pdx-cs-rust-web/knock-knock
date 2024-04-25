@@ -4,6 +4,7 @@ use crate::*;
 #[template(path = "index.html")]
 pub struct IndexTemplate<'a> {
     joke: &'a Joke,
+    tags: Option<String>,
     stylesheet: &'static str,
 }
 
@@ -11,6 +12,7 @@ impl<'a> IndexTemplate<'a> {
     fn new(joke: &'a Joke) -> Self {
         Self {
             joke,
+            tags: joke.tags.as_ref().map(format_tags),
             stylesheet: "/knock-knock.css",
         }
     }
