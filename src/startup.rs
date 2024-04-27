@@ -4,7 +4,7 @@ async fn handler_404() -> Response {
     (StatusCode::NOT_FOUND, "404 Not Found").into_response()
 }
 
-pub async fn startup(ip: String) {
+pub async fn startup(ip: String, allow_empty: bool) {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -17,8 +17,8 @@ pub async fn startup(ip: String) {
         .make_span_with(trace::DefaultMakeSpan::new().level(tracing::Level::INFO))
         .on_response(trace::DefaultOnResponse::new().level(tracing::Level::INFO));
 
-    let jokebase = JokeBase::new("assets/jokebase.json").unwrap_or_else(|e| {
-        tracing::error!("jokebase new: {}", e);
+    let jokebase = JokeBase::new("assets/jokebase.json", allow_empty).unwrap_or_else(|e| {
+        tracing::error!("jokebase: {}", e);
         std::process::exit(1);
     });
     let jokebase = Arc::new(RwLock::new(jokebase));
