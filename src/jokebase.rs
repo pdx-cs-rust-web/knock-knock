@@ -98,8 +98,7 @@ impl JokeBase {
     }
 
     pub fn get_random(&self) -> Result<&Joke, JokeBaseErr> {
-        let (_, joke) = fastrand::choice(self.jokemap.iter())
-            .ok_or(JokeBaseErr::NoJoke)?;
+        let (_, joke) = fastrand::choice(self.jokemap.iter()).ok_or(JokeBaseErr::NoJoke)?;
         Ok(joke)
     }
 
