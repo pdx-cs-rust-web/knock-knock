@@ -19,7 +19,7 @@ use askama::Template;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
-    response::{IntoResponse, Response, Redirect},
+    response::{IntoResponse, Redirect, Response},
     routing::{delete, get, post, put},
     Json, Router,
 };
@@ -46,7 +46,7 @@ const STYLESHEET: &str = "assets/static/knock-knock.css";
 #[derive(Parser)]
 #[command(version, about, long_about=None)]
 struct Args {
-    #[clap(short, long, default_value="localhost:3000")]
+    #[clap(short, long, default_value = "localhost:3000")]
     serve: String,
 }
 

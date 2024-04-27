@@ -52,7 +52,9 @@ pub struct TellTemplate {
 
 impl TellTemplate {
     fn new() -> Self {
-        Self { stylesheet: "/knock-knock.css" }
+        Self {
+            stylesheet: "/knock-knock.css",
+        }
     }
 }
 
@@ -107,13 +109,11 @@ pub async fn handler_add(
     let mut jokebase = jokebase.write().await;
 
     match jokebase.add(joke) {
-        Ok(()) =>
-            Redirect::to(&format!("/?id={}", params.id)).into_response(),
-        Err(JokeBaseErr::JokeBaseIoError(msg)) =>
-            (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response(),
-        Err(JokeBaseErr::JokeExists(id)) =>
-            (StatusCode::CONFLICT, id).into_response(),
-        Err(e) =>
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+        Ok(()) => Redirect::to(&format!("/?id={}", params.id)).into_response(),
+        Err(JokeBaseErr::JokeBaseIoError(msg)) => {
+            (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response()
+        }
+        Err(JokeBaseErr::JokeExists(id)) => (StatusCode::CONFLICT, id).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }
 }
