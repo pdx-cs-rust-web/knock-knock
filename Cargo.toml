@@ -2,14 +2,13 @@
 name = "knock-knock"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "knock-knock joke webservice"
 
 [dependencies]
 askama = { version = "0.12.1", features = ["with-axum"] }
 askama_axum = "0.4.0"
 axum = "0.7.5"
-clap = { version = "4.5.4", features = ["derive", "env", "unicode", "wrap_help"] }
+clap = { version = "4.5.4", features = ["derive", "env", "unicode", "wrap_help", "cargo"] }
 fastrand = "2.0.2"
 serde = { version = "1.0.197", features = ["derive", "serde_derive"] }
 serde_json = "1.0.116"
