@@ -13,7 +13,6 @@ use web::*;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{ErrorKind, Seek, Write};
-use std::net::SocketAddr;
 use std::sync::Arc;
 
 use askama::Template;
@@ -45,10 +44,14 @@ use utoipa_swagger_ui::SwaggerUi;
 const STYLESHEET: &str = "assets/static/knock-knock.css";
 
 #[derive(Parser)]
-struct Args;
+#[command(version, about, long_about=None)]
+struct Args {
+    #[clap(short, long, default_value="localhost:3000")]
+    serve: String,
+}
 
 #[tokio::main]
 async fn main() {
-    let _cli = Args::parse();
-    startup().await
+    let cli = Args::parse();
+    startup(cli.serve).await
 }

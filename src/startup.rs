@@ -4,7 +4,7 @@ async fn handler_404() -> Response {
     (StatusCode::NOT_FOUND, "404 Not Found").into_response()
 }
 
-pub async fn startup() {
+pub async fn startup(ip: String) {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -56,7 +56,6 @@ pub async fn startup() {
         .layer(trace_layer)
         .with_state(jokebase);
 
-    let ip = SocketAddr::new([127, 0, 0, 1].into(), 3000);
     let listener = tokio::net::TcpListener::bind(ip).await.unwrap();
     tracing::debug!("serving {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
