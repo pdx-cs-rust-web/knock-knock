@@ -48,10 +48,12 @@ const STYLESHEET: &str = "assets/static/knock-knock.css";
 struct Args {
     #[clap(short, long, default_value = "localhost:3000")]
     serve: String,
+    #[clap(long)]
+    allow_empty: bool,
 }
 
 #[tokio::main]
 async fn main() {
-    let cli = Args::parse();
-    startup(cli.serve).await
+    let args = Args::parse();
+    startup(args.serve, args.allow_empty).await
 }

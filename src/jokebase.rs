@@ -74,26 +74,35 @@ pub struct JokeBase {
 }
 
 impl JokeBase {
-    pub fn new<P: AsRef<std::path::Path>>(db_path: P) -> Result<Self, std::io::Error> {
-        let mut file = File::create_new(&db_path)
-            .and_then(|mut f| {
+    pub fn new<P: AsRef<std::path::Path>>(
+        db_path: P,
+        allow_empty: bool,
+    ) -> Result<Self, std::io::Error> {
+        let opened = File::options().read(true).write(true).open(&db_path);
+        let mut file = match opened {
+            Ok(f) => f,
+            Err(e) => {
+                if e.kind() != ErrorKind::NotFound || !allow_empty {
+                    return Err(e);
+                }
+                let mut f = File::create_new(&db_path)?;
                 let jokemap: JokeMap = HashMap::new();
                 let json = serde_json::to_string(&jokemap).unwrap();
                 f.write_all(json.as_bytes())?;
                 f.sync_all()?;
                 f.rewind()?;
-                Ok(f)
-            })
-            .or_else(|e| {
-                if e.kind() == ErrorKind::AlreadyExists {
-                    File::options().read(true).write(true).open(&db_path)
-                } else {
-                    Err(e)
-                }
-            })?;
+                f
+            }
+        };
         let json = std::io::read_to_string(&mut file)?;
-        let jokemap = serde_json::from_str(&json)
+        let jokemap: JokeMap = serde_json::from_str(&json)
             .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
+        if !allow_empty && jokemap.is_empty() {
+            return Err(std::io::Error::new(
+                ErrorKind::InvalidData,
+                JokeBaseErr::NoJoke,
+            ));
+        }
         Ok(Self { file, jokemap })
     }
 
