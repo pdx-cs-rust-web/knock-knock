@@ -46,7 +46,7 @@ const STYLESHEET: &str = "assets/static/knock-knock.css";
 #[derive(Parser)]
 #[command(version, about, long_about=None)]
 struct Args {
-    #[clap(short, long, default_value = "127.0.0.1:3000")]
+    #[clap(short, long, default_value = "0.0.0.0:3000")]
     serve: String,
     #[clap(long)]
     allow_empty: bool,
