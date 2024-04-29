@@ -15,7 +15,7 @@ services:
     ports:
       - 3000:3000
     environment:
-      - PG_DBNAME=joke
+      - PG_DBNAME=knockknock
       - PG_HOST=db
       - PG_USER=postgres
       - PG_PASSWORDFILE=/run/secrets/db-password
@@ -41,7 +41,7 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=example
+      - POSTGRES_DB=knockknock
       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
     expose:
       - 5432

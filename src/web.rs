@@ -2,17 +2,18 @@ use crate::*;
 
 #[derive(Template)]
 #[template(path = "index.html")]
-pub struct IndexTemplate<'a> {
-    joke: &'a Joke,
+pub struct IndexTemplate {
+    joke: Joke,
     tags: Option<String>,
     stylesheet: &'static str,
 }
 
-impl<'a> IndexTemplate<'a> {
-    fn new(joke: &'a Joke) -> Self {
+impl IndexTemplate {
+    fn new(joke: Joke) -> Self {
+        let tags = joke.tags.as_ref().map(format_tags);
         Self {
             joke,
-            tags: joke.tags.as_ref().map(format_tags),
+            tags,
             stylesheet: "/knock-knock.css",
         }
     }

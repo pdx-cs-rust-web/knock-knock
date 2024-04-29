@@ -29,7 +29,8 @@ pub struct ApiDoc;
     )
 )]
 pub async fn jokes(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
-    jokebase.read().await.into_response()
+    let jokes = jokebase.read().await.get_jokes();
+    (StatusCode::OK, Json(jokes)).into_response()
 }
 
 #[utoipa::path(

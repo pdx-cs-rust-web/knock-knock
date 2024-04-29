@@ -10,9 +10,8 @@ use jokebase::*;
 use startup::*;
 use web::*;
 
-use std::collections::{HashMap, HashSet};
-use std::fs::File;
-use std::io::{ErrorKind, Seek, Write};
+use std::collections::HashSet;
+use std::error::Error;
 use std::sync::Arc;
 
 use askama::Template;
@@ -24,9 +23,9 @@ use axum::{
     Json, Router,
 };
 use clap::Parser;
-extern crate fastrand;
 use serde::{ser::SerializeStruct, Deserialize, Serialize, Serializer};
 extern crate serde_json;
+use sqlx::{self, Pool, postgres::{Postgres, PgPool}};
 extern crate thiserror;
 use tokio::{self, sync::RwLock};
 use tower_http::{services, trace};
@@ -48,12 +47,10 @@ const STYLESHEET: &str = "assets/static/knock-knock.css";
 struct Args {
     #[clap(short, long, default_value = "0.0.0.0:3000")]
     serve: String,
-    #[clap(long)]
-    allow_empty: bool,
 }
 
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    startup(args.serve, args.allow_empty).await
+    startup(args.serve).await
 }
