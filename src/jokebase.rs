@@ -1,6 +1,8 @@
 use crate::*;
 
 #[derive(Debug, thiserror::Error, ToSchema, Serialize)]
+// XXX Fixme!
+#[allow(dead_code)]
 pub enum JokeBaseErr {
     #[error("joke already exists: {0}")]
     JokeExists(String),
@@ -110,7 +112,7 @@ impl JokeBase {
         todo!()
     }
 
-    pub async fn get<'a>(&self, index: &str) -> Result<Joke, JokeBaseErr> {
+    pub async fn get<'a>(&self, _index: &str) -> Result<Joke, JokeBaseErr> {
         todo!()
     }
 
@@ -120,15 +122,15 @@ impl JokeBase {
         Ok(jokes)
     }
 
-    pub async fn add(&mut self, joke: Joke) -> Result<(), JokeBaseErr> {
+    pub async fn add(&mut self, _joke: Joke) -> Result<(), JokeBaseErr> {
         todo!()
     }
 
-    pub async fn delete(&mut self, index: &str) -> Result<(), JokeBaseErr> {
+    pub async fn delete(&mut self, _index: &str) -> Result<(), JokeBaseErr> {
         todo!()
     }
 
-    pub async fn update(&mut self, index: &str, joke: Joke) -> Result<(), JokeBaseErr> {
+    pub async fn update(&mut self, _index: &str, _joke: Joke) -> Result<(), JokeBaseErr> {
         todo!()
     }
 }
