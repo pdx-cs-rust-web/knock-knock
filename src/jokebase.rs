@@ -10,13 +10,21 @@ pub enum JokeBaseErr {
     NoJoke,
     #[error("joke {0} doesn't exist")]
     JokeDoesNotExist(String),
-    #[error("joke payload unprocessable")]
+    #[error("joke payload unprocessable: {0}")]
     JokeUnprocessable(String),
+    #[error("database error: {0}")]
+    DatabaseError(String),
 }
 
 impl From<std::io::Error> for JokeBaseErr {
     fn from(e: std::io::Error) -> Self {
         JokeBaseErr::JokeBaseIoError(e.to_string())
+    }
+}
+
+impl From<sqlx::Error> for JokeBaseErr {
+    fn from(e: sqlx::Error) -> Self {
+        JokeBaseErr::DatabaseError(e.to_string())
     }
 }
 
@@ -68,6 +76,16 @@ impl JokeBaseError {
 #[derive(Debug)]
 pub struct JokeBase(pub Pool<Postgres>);
 
+fn to_joke(row: PgRow) -> Joke {
+    Joke {
+        id: row.get("id"),
+        whos_there: row.get("whos_there"),
+        answer_who: row.get("answer_who"),
+        source: row.get("source"),
+        tags: None,
+    }
+}
+
 impl JokeBase {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         use std::env::var;
@@ -88,27 +106,29 @@ impl JokeBase {
         Ok(JokeBase(pool))
     }
 
-    pub fn get_random(&self) -> Result<Joke, JokeBaseErr> {
+    pub async fn get_random(&self) -> Result<Joke, JokeBaseErr> {
         todo!()
     }
 
-    pub fn get<'a>(&self, index: &str) -> Result<Joke, JokeBaseErr> {
+    pub async fn get<'a>(&self, index: &str) -> Result<Joke, JokeBaseErr> {
         todo!()
     }
 
-    pub fn get_jokes<'a>(&self) -> Vec<Joke> {
+    pub async fn get_jokes<'a>(&self) -> Result<Vec<Joke>, JokeBaseErr> {
+        let jokes = sqlx::query("SELECT * FROM jokes;").fetch_all(&self.0).await?;
+        let jokes: Vec<Joke> = jokes.into_iter().map(|j| to_joke(j)).collect();
+        Ok(jokes)
+    }
+
+    pub async fn add(&mut self, joke: Joke) -> Result<(), JokeBaseErr> {
         todo!()
     }
 
-    pub fn add(&mut self, joke: Joke) -> Result<(), JokeBaseErr> {
+    pub async fn delete(&mut self, index: &str) -> Result<(), JokeBaseErr> {
         todo!()
     }
 
-    pub fn delete(&mut self, index: &str) -> Result<(), JokeBaseErr> {
-        todo!()
-    }
-
-    pub fn update(&mut self, index: &str, joke: Joke) -> Result<(), JokeBaseErr> {
+    pub async fn update(&mut self, index: &str, joke: Joke) -> Result<(), JokeBaseErr> {
         todo!()
     }
 }
