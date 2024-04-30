@@ -82,7 +82,7 @@ impl JokeBase {
             var("PG_DBNAME")?,
         );
         let pool = PgPool::connect(&url).await?;
-        sqlx::migrate!("db/migrations")
+        sqlx::migrate!()
             .run(&pool)
             .await?;
         Ok(JokeBase(pool))

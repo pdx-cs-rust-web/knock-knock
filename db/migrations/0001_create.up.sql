@@ -8,6 +8,6 @@ CREATE TABLE IF NOT EXISTS jokes (
 );
 
 CREATE TABLE IF NOT EXISTS tags (
-  id TEXT REFERENCES jokes.id,
+  id TEXT REFERENCES jokes(id),
   tag TEXT NOT NULL
 );
