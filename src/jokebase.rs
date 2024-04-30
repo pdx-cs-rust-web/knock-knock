@@ -78,17 +78,31 @@ impl JokeBaseError {
 #[derive(Debug)]
 pub struct JokeBase(pub Pool<Postgres>);
 
-fn to_joke(row: PgRow) -> Joke {
-    Joke {
-        id: row.get("id"),
-        whos_there: row.get("whos_there"),
-        answer_who: row.get("answer_who"),
-        source: row.get("source"),
-        tags: None,
-    }
-}
-
 impl JokeBase {
+    async fn to_joke(&self, row: &PgRow) -> Result<Joke, sqlx::Error> {
+        let id = row.get("id");
+        let tags = sqlx::query(r#"SELECT tag FROM tags WHERE id = $1"#)
+            .bind(&id)
+            .fetch_all(&self.0)
+            .await?;
+        let tags: HashSet<String> = tags
+            .iter()
+            .map(|row| row.get("tag"))
+            .collect();
+        let tags = if tags.is_empty() {
+            None
+        } else {
+            Some(tags)
+        };
+        Ok(Joke {
+            id,
+            whos_there: row.get("whos_there"),
+            answer_who: row.get("answer_who"),
+            source: row.get("source"),
+            tags,
+        })
+    }
+
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         use std::env::var;
         
@@ -117,13 +131,36 @@ impl JokeBase {
     }
 
     pub async fn get_jokes<'a>(&self) -> Result<Vec<Joke>, JokeBaseErr> {
-        let jokes = sqlx::query("SELECT * FROM jokes;").fetch_all(&self.0).await?;
-        let jokes: Vec<Joke> = jokes.into_iter().map(|j| to_joke(j)).collect();
+        let rows = sqlx::query("SELECT * FROM jokes;").fetch_all(&self.0).await?;
+        let mut jokes: Vec<Joke> = Vec::with_capacity(rows.len());
+        for j in rows.iter() {
+            jokes.push(self.to_joke(j).await?);
+        }
         Ok(jokes)
     }
 
-    pub async fn add(&mut self, _joke: Joke) -> Result<(), JokeBaseErr> {
-        todo!()
+    pub async fn add(&mut self, joke: Joke) -> Result<(), JokeBaseErr> {
+        sqlx::query(
+            r#"INSERT INTO jokes
+            (id, whos_there, answer_who, source)
+            VALUES ($1, $2, $3, $4);"#
+        )
+            .bind(&joke.id)
+            .bind(&joke.whos_there)
+            .bind(&joke.answer_who)
+            .bind(&joke.source)
+            .execute(&self.0)
+            .await?;
+        if let Some(tags) = &joke.tags {
+            for tag in tags.iter() {
+                sqlx::query(r#"INSERT INTO tags (id, tag) VALUES ($1, $2);"#)
+                    .bind(&joke.id)
+                    .bind(tag)
+                    .execute(&self.0)
+                    .await?;
+            }
+        }
+        Ok(())
     }
 
     pub async fn delete(&mut self, _index: &str) -> Result<(), JokeBaseErr> {
