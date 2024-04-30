@@ -2,17 +2,18 @@ use crate::*;
 
 #[derive(Template)]
 #[template(path = "index.html")]
-pub struct IndexTemplate<'a> {
-    joke: &'a Joke,
+pub struct IndexTemplate {
+    joke: Joke,
     tags: Option<String>,
     stylesheet: &'static str,
 }
 
-impl<'a> IndexTemplate<'a> {
-    fn new(joke: &'a Joke) -> Self {
+impl IndexTemplate {
+    fn new(joke: Joke) -> Self {
+        let tags = joke.tags.as_ref().map(format_tags);
         Self {
             joke,
-            tags: joke.tags.as_ref().map(format_tags),
+            tags,
             stylesheet: "/knock-knock.css",
         }
     }
@@ -30,9 +31,9 @@ pub async fn handler_index(
     let jokebase = jokebase.read().await;
 
     let joke = if let Some(id) = params.id {
-        jokebase.get(&id)
+        jokebase.get(&id).await
     } else {
-        match jokebase.get_random() {
+        match jokebase.get_random().await {
             Ok(joke) => return Redirect::to(&format!("/?id={}", joke.id)).into_response(),
             e => e,
         }
@@ -108,7 +109,7 @@ pub async fn handler_add(
 
     let mut jokebase = jokebase.write().await;
 
-    match jokebase.add(joke) {
+    match jokebase.add(joke).await {
         Ok(()) => Redirect::to(&format!("/?id={}", params.id)).into_response(),
         Err(JokeBaseErr::JokeBaseIoError(msg)) => {
             (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response()

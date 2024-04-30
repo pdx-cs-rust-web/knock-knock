@@ -1,6 +1,8 @@
 use crate::*;
 
 #[derive(Debug, thiserror::Error, ToSchema, Serialize)]
+// XXX Fixme!
+#[allow(dead_code)]
 pub enum JokeBaseErr {
     #[error("joke already exists: {0}")]
     JokeExists(String),
@@ -10,13 +12,21 @@ pub enum JokeBaseErr {
     NoJoke,
     #[error("joke {0} doesn't exist")]
     JokeDoesNotExist(String),
-    #[error("joke payload unprocessable")]
+    #[error("joke payload unprocessable: {0}")]
     JokeUnprocessable(String),
+    #[error("database error: {0}")]
+    DatabaseError(String),
 }
 
 impl From<std::io::Error> for JokeBaseErr {
     fn from(e: std::io::Error) -> Self {
         JokeBaseErr::JokeBaseIoError(e.to_string())
+    }
+}
+
+impl From<sqlx::Error> for JokeBaseErr {
+    fn from(e: sqlx::Error) -> Self {
+        JokeBaseErr::DatabaseError(e.to_string())
     }
 }
 
@@ -65,102 +75,62 @@ impl JokeBaseError {
     }
 }
 
-type JokeMap = HashMap<String, Joke>;
-
 #[derive(Debug)]
-pub struct JokeBase {
-    file: File,
-    jokemap: JokeMap,
+pub struct JokeBase(pub Pool<Postgres>);
+
+fn to_joke(row: PgRow) -> Joke {
+    Joke {
+        id: row.get("id"),
+        whos_there: row.get("whos_there"),
+        answer_who: row.get("answer_who"),
+        source: row.get("source"),
+        tags: None,
+    }
 }
 
 impl JokeBase {
-    pub fn new<P: AsRef<std::path::Path>>(
-        db_path: P,
-        allow_empty: bool,
-    ) -> Result<Self, std::io::Error> {
-        let opened = File::options().read(true).write(true).open(&db_path);
-        let mut file = match opened {
-            Ok(f) => f,
-            Err(e) => {
-                if e.kind() != ErrorKind::NotFound || !allow_empty {
-                    return Err(e);
-                }
-                let mut f = File::create_new(&db_path)?;
-                let jokemap: JokeMap = HashMap::new();
-                let json = serde_json::to_string(&jokemap).unwrap();
-                f.write_all(json.as_bytes())?;
-                f.sync_all()?;
-                f.rewind()?;
-                f
-            }
-        };
-        let json = std::io::read_to_string(&mut file)?;
-        let jokemap: JokeMap = serde_json::from_str(&json)
-            .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
-        if !allow_empty && jokemap.is_empty() {
-            return Err(std::io::Error::new(
-                ErrorKind::InvalidData,
-                JokeBaseErr::NoJoke,
-            ));
-        }
-        Ok(Self { file, jokemap })
+    pub async fn new() -> Result<Self, Box<dyn Error>> {
+        use std::env::var;
+        
+        let pwf = var("PG_PASSWORDFILE")?;
+        let password = std::fs::read_to_string(pwf)?;
+        let url = format!(
+            "postgres://{}:{}@{}:5432/{}",
+            var("PG_USER")?,
+            password.trim(),
+            var("PG_HOST")?,
+            var("PG_DBNAME")?,
+        );
+        let pool = PgPool::connect(&url).await?;
+        sqlx::migrate!()
+            .run(&pool)
+            .await?;
+        Ok(JokeBase(pool))
     }
 
-    pub fn get_random(&self) -> Result<&Joke, JokeBaseErr> {
-        let (_, joke) = fastrand::choice(self.jokemap.iter()).ok_or(JokeBaseErr::NoJoke)?;
-        Ok(joke)
+    pub async fn get_random(&self) -> Result<Joke, JokeBaseErr> {
+        todo!()
     }
 
-    pub fn get<'a>(&'a self, index: &str) -> Result<&'a Joke, JokeBaseErr> {
-        self.jokemap
-            .get(index)
-            .ok_or(JokeBaseErr::JokeDoesNotExist(index.to_string()))
+    pub async fn get<'a>(&self, _index: &str) -> Result<Joke, JokeBaseErr> {
+        todo!()
     }
 
-    fn write_jokes(&mut self) -> Result<(), std::io::Error> {
-        let json = serde_json::to_string(&self.jokemap).unwrap();
-        self.file.rewind()?;
-        self.file.set_len(0)?;
-        self.file.write_all(json.as_bytes())?;
-        self.file.sync_all()
+    pub async fn get_jokes<'a>(&self) -> Result<Vec<Joke>, JokeBaseErr> {
+        let jokes = sqlx::query("SELECT * FROM jokes;").fetch_all(&self.0).await?;
+        let jokes: Vec<Joke> = jokes.into_iter().map(|j| to_joke(j)).collect();
+        Ok(jokes)
     }
 
-    pub fn add(&mut self, joke: Joke) -> Result<(), JokeBaseErr> {
-        let id = joke.id.clone();
-        if self.jokemap.get(&id).is_some() {
-            return Err(JokeBaseErr::JokeExists(id));
-        }
-        self.jokemap.insert(id, joke);
-        self.write_jokes()?;
-        Ok(())
+    pub async fn add(&mut self, _joke: Joke) -> Result<(), JokeBaseErr> {
+        todo!()
     }
 
-    pub fn delete(&mut self, index: &str) -> Result<(), JokeBaseErr> {
-        if !self.jokemap.contains_key(index) {
-            return Err(JokeBaseErr::JokeDoesNotExist(index.to_string()));
-        }
-        self.jokemap.remove(index);
-        self.write_jokes()?;
-        Ok(())
+    pub async fn delete(&mut self, _index: &str) -> Result<(), JokeBaseErr> {
+        todo!()
     }
 
-    pub fn update(&mut self, index: &str, joke: Joke) -> Result<StatusCode, JokeBaseErr> {
-        if !self.jokemap.contains_key(index) {
-            return Err(JokeBaseErr::NoJoke);
-        }
-        if joke.id.is_empty() {
-            return Err(JokeBaseErr::JokeUnprocessable(index.to_string()));
-        }
-        self.jokemap
-            .entry(index.to_string())
-            .and_modify(|x| *x = joke);
-        self.write_jokes()?;
-        Ok(StatusCode::OK)
-    }
-}
-
-impl IntoResponse for &JokeBase {
-    fn into_response(self) -> Response {
-        (StatusCode::OK, Json(&self.jokemap)).into_response()
+    pub async fn update(&mut self, _index: &str, _joke: Joke) -> Result<(), JokeBaseErr> {
+        todo!()
     }
 }
