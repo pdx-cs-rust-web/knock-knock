@@ -19,7 +19,7 @@ services:
       - PG_HOST=db
       - PG_USER=postgres
       - PG_PASSWORDFILE=/run/secrets/db-password
-      - RUST_LOG=debug
+#      - RUST_LOG=debug
     secrets:
       - db-password
     depends_on:
