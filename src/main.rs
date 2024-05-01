@@ -25,7 +25,7 @@ use axum::{
 use clap::Parser;
 use serde::{ser::SerializeStruct, Deserialize, Serialize, Serializer};
 extern crate serde_json;
-use sqlx::{self, Pool, Row, postgres::{Postgres, PgPool, PgRow}};
+use sqlx::{self, Pool, Row, postgres::{Postgres, PgConnection, PgPool, PgRow}};
 extern crate thiserror;
 use tokio::{self, sync::RwLock};
 use tower_http::{services, trace};
