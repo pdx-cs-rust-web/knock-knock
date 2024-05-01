@@ -85,15 +85,8 @@ impl JokeBase {
             .bind(&id)
             .fetch_all(&self.0)
             .await?;
-        let tags: HashSet<String> = tags
-            .iter()
-            .map(|row| row.get("tag"))
-            .collect();
-        let tags = if tags.is_empty() {
-            None
-        } else {
-            Some(tags)
-        };
+        let tags: HashSet<String> = tags.iter().map(|row| row.get("tag")).collect();
+        let tags = if tags.is_empty() { None } else { Some(tags) };
         Ok(Joke {
             id,
             whos_there: row.get("whos_there"),
@@ -122,7 +115,7 @@ impl JokeBase {
 
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         use std::env::var;
-        
+
         let pwf = var("PG_PASSWORDFILE")?;
         let password = std::fs::read_to_string(pwf)?;
         let url = format!(
@@ -133,15 +126,14 @@ impl JokeBase {
             var("PG_DBNAME")?,
         );
         let pool = PgPool::connect(&url).await?;
-        sqlx::migrate!()
-            .run(&pool)
-            .await?;
+        sqlx::migrate!().run(&pool).await?;
         Ok(JokeBase(pool))
     }
 
     pub async fn get_random(&self) -> Result<Joke, JokeBaseErr> {
         let row = sqlx::query(r#"SELECT * FROM jokes ORDER BY RANDOM () LIMIT 1;"#)
-            .fetch_one(&self.0).await?;
+            .fetch_one(&self.0)
+            .await?;
 
         let joke = self.to_joke(&row).await?;
         Ok(joke)
@@ -150,14 +142,17 @@ impl JokeBase {
     pub async fn get<'a>(&self, index: &str) -> Result<Joke, JokeBaseErr> {
         let row = sqlx::query(r#"SELECT * FROM jokes WHERE id = $1;"#)
             .bind(index)
-            .fetch_one(&self.0).await?;
+            .fetch_one(&self.0)
+            .await?;
 
         let joke = self.to_joke(&row).await?;
         Ok(joke)
     }
 
     pub async fn get_jokes<'a>(&self) -> Result<Vec<Joke>, JokeBaseErr> {
-        let rows = sqlx::query(r#"SELECT * FROM jokes;"#).fetch_all(&self.0).await?;
+        let rows = sqlx::query(r#"SELECT * FROM jokes;"#)
+            .fetch_all(&self.0)
+            .await?;
         let mut jokes: Vec<Joke> = Vec::with_capacity(rows.len());
         for j in rows.iter() {
             jokes.push(self.to_joke(j).await?);
@@ -170,14 +165,14 @@ impl JokeBase {
         sqlx::query(
             r#"INSERT INTO jokes
             (id, whos_there, answer_who, source)
-            VALUES ($1, $2, $3, $4);"#
+            VALUES ($1, $2, $3, $4);"#,
         )
-            .bind(&joke.id)
-            .bind(&joke.whos_there)
-            .bind(&joke.answer_who)
-            .bind(&joke.source)
-            .execute(&mut *tx)
-            .await?;
+        .bind(&joke.id)
+        .bind(&joke.whos_there)
+        .bind(&joke.answer_who)
+        .bind(&joke.source)
+        .execute(&mut *tx)
+        .await?;
         Self::insert_tags(&mut tx, &joke.id, &joke.tags).await?;
         Ok(tx.commit().await?)
     }
@@ -197,12 +192,12 @@ impl JokeBase {
 
     pub async fn update(&mut self, index: &str, joke: Joke) -> Result<(), JokeBaseErr> {
         let mut tx = Pool::begin(&self.0).await?;
-        sqlx::query(
+        let q = sqlx::query(
             r#"UPDATE jokes SET
             (id, whos_there, answer_who, source)
-            VALUES ($1, $2, $3, $4);"#
-        )
-            .bind(&joke.id)
+            VALUES ($1, $2, $3, $4);"#,
+        );
+        q.bind(&joke.id)
             .bind(&joke.whos_there)
             .bind(&joke.answer_who)
             .bind(&joke.source)
