@@ -3,17 +3,28 @@ use crate::*;
 #[derive(Template)]
 #[template(path = "index.html")]
 pub struct IndexTemplate<'a> {
-    joke: &'a Joke,
+    joke: Option<&'a Joke>,
     tags: Option<String>,
     stylesheet: &'static str,
+    error: Option<String>,
 }
 
 impl<'a> IndexTemplate<'a> {
-    fn new(joke: &'a Joke) -> Self {
+    fn joke(joke: &'a Joke) -> Self {
         Self {
-            joke,
+            joke: Some(joke),
             tags: joke.tags.as_ref().map(format_tags),
             stylesheet: "/knock-knock.css",
+            error: None,
+        }
+    }
+
+    fn error(error: String) -> Self {
+        Self {
+            joke: None,
+            tags: None,
+            stylesheet: "/knock-knock.css",
+            error: Some(error),
         }
     }
 }
@@ -39,8 +50,8 @@ pub async fn handler_index(
     };
 
     match joke {
-        Ok(joke) => (StatusCode::OK, IndexTemplate::new(joke)).into_response(),
-        Err(e) => (StatusCode::NO_CONTENT, e.to_string()).into_response(),
+        Ok(joke) => (StatusCode::OK, IndexTemplate::joke(joke)).into_response(),
+        Err(e) => (StatusCode::NO_CONTENT, IndexTemplate::error(e.to_string())).into_response(),
     }
 }
 

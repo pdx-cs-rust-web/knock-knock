@@ -19,3 +19,7 @@ h1 {
 .joke {
     border: 1px solid black;
 }
+
+.error {
+    color: #881111;
+}
