@@ -5,18 +5,20 @@
   </head>
   <body>
   <h1>Knock-Knock</h1>
+  {%- if let Some(thejoke) = joke -%}
   <div class="joke">
       <span class="teller">Knock-Knock!</span><br/>
       <span class="tellee">Who's there?</span><br/>
-      <span class="teller">{{joke.whos_there}}</span><br/>
-      <span class="tellee">{{joke.whos_there}} who?</span><br/>
-      <span class="teller">{{joke.answer_who}}</span><br/>
+      <span class="teller">{{thejoke.whos_there}}</span><br/>
+      <span class="tellee">{{thejoke.whos_there}} who?</span><br/>
+      <span class="teller">{{thejoke.answer_who}}</span><br/>
   </div>
   <span class="annotation">
-    [id: {{joke.id -}}
+    [id: {{thejoke.id -}}
     {%- if let Some(tags) = tags -%}; tags={{- tags -}}{%- endif -%}
-    {%- if let Some(source) = joke.source %}; source={{- source -}}{%- endif -%}
+    {%- if let Some(source) = thejoke.source %}; source={{- source -}}{%- endif -%}
     ]
+  {%- endif -%}
   </span><br/><br/>
   <form method="get" action="/">
   <input type="submit" value="Tell me another!"/>
@@ -28,5 +30,8 @@
   <input type="text" name="id"/>
   <input type="submit" value="Find this joke"/>
   </form>
+  {%- if let Some(error) = error -%}
+  <div class="error">{{error}}</div>
+  {%- endif -%}
   </body>
 </html>
