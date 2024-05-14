@@ -50,7 +50,7 @@ pub async fn handler_index(
     };
 
     match joke {
-        Ok(joke) => (StatusCode::OK, IndexTemplate::joke(joke)).into_response(),
+        Ok(joke) => (StatusCode::OK, IndexTemplate::joke(&joke)).into_response(),
         Err(e) => (StatusCode::NO_CONTENT, IndexTemplate::error(e.to_string())).into_response(),
     }
 }
