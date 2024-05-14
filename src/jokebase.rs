@@ -162,7 +162,7 @@ impl JokeBase {
 
     pub async fn add(&mut self, joke: Joke) -> Result<(), JokeBaseErr> {
         let mut tx = Pool::begin(&self.0).await?;
-        sqlx::query(
+        let result = sqlx::query(
             r#"INSERT INTO jokes
             (id, whos_there, answer_who, source)
             VALUES ($1, $2, $3, $4);"#,
@@ -172,7 +172,15 @@ impl JokeBase {
         .bind(&joke.answer_who)
         .bind(&joke.source)
         .execute(&mut *tx)
-        .await?;
+        .await;
+        result.map_err(|e| {
+            if let sqlx::Error::Database(ref dbe) = e {
+                if let Some("23505") = dbe.code().as_deref() {
+                    return JokeBaseErr::JokeExists(joke.id.to_string());
+                }
+            }
+            JokeBaseErr::DatabaseError(e.to_string())
+        })?;
         Self::insert_tags(&mut tx, &joke.id, &joke.tags).await?;
         Ok(tx.commit().await?)
     }

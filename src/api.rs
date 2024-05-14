@@ -28,8 +28,8 @@ pub struct ApiDoc;
         (status = 200, description = "List jokes", body = [Joke])
     )
 )]
-pub async fn jokes(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
-    let jokes = jokebase.read().await.get_jokes().await;
+pub async fn jokes(State(appstate): HandlerAppState) -> Response {
+    let jokes = appstate.read().await.jokebase.get_jokes().await;
     (StatusCode::OK, Json(jokes)).into_response()
 }
 
@@ -41,8 +41,8 @@ pub async fn jokes(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
         (status = 204, description = "Jokebase is empty", body = JokeBaseError)
     )
 )]
-pub async fn joke(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
-    match jokebase.read().await.get_random().await {
+pub async fn joke(State(appstate): HandlerAppState) -> Response {
+    match appstate.read().await.jokebase.get_random().await {
         Ok(joke) => joke.into_response(),
         Err(e) => JokeBaseError::response(StatusCode::NO_CONTENT, e),
     }
@@ -56,11 +56,8 @@ pub async fn joke(State(jokebase): State<Arc<RwLock<JokeBase>>>) -> Response {
         (status = 204, description = "No joke with this id", body = JokeBaseError),
     )
 )]
-pub async fn get_joke(
-    State(jokebase): State<Arc<RwLock<JokeBase>>>,
-    Path(joke_id): Path<String>,
-) -> Response {
-    match jokebase.read().await.get(&joke_id).await {
+pub async fn get_joke(State(appstate): HandlerAppState, Path(joke_id): Path<String>) -> Response {
+    match appstate.read().await.jokebase.get(&joke_id).await {
         Ok(joke) => joke.into_response(),
         Err(e) => JokeBaseError::response(StatusCode::NO_CONTENT, e),
     }
@@ -78,11 +75,8 @@ pub async fn get_joke(
         (status = 400, description = "Bad request", body = JokeBaseError)
     )
 )]
-pub async fn post_joke(
-    State(jokebase): State<Arc<RwLock<JokeBase>>>,
-    Json(joke): Json<Joke>,
-) -> Response {
-    match jokebase.write().await.add(joke).await {
+pub async fn post_joke(State(appstate): HandlerAppState, Json(joke): Json<Joke>) -> Response {
+    match appstate.write().await.jokebase.add(joke).await {
         Ok(()) => StatusCode::CREATED.into_response(),
         Err(e) => JokeBaseError::response(StatusCode::BAD_REQUEST, e),
     }
@@ -97,10 +91,10 @@ pub async fn post_joke(
     )
 )]
 pub async fn delete_joke(
-    State(jokebase): State<Arc<RwLock<JokeBase>>>,
+    State(appstate): HandlerAppState,
     Path(joke_id): Path<String>,
 ) -> Response {
-    match jokebase.write().await.delete(&joke_id).await {
+    match appstate.write().await.jokebase.delete(&joke_id).await {
         Ok(()) => StatusCode::OK.into_response(),
         Err(e) => JokeBaseError::response(StatusCode::BAD_REQUEST, e),
     }
@@ -121,11 +115,11 @@ pub async fn delete_joke(
     )
 )]
 pub async fn update_joke(
-    State(jokebase): State<Arc<RwLock<JokeBase>>>,
+    State(appstate): HandlerAppState,
     Path(joke_id): Path<String>,
     Json(joke): Json<Joke>,
 ) -> Response {
-    match jokebase.write().await.update(&joke_id, joke).await {
+    match appstate.write().await.jokebase.update(&joke_id, joke).await {
         Ok(_) => StatusCode::OK.into_response(),
         Err(JokeBaseErr::JokeUnprocessable(e)) => JokeBaseError::response(
             StatusCode::UNPROCESSABLE_ENTITY,

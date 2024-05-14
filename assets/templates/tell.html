@@ -17,5 +17,9 @@
   <label for="source">Source:</label>
   <input type="text" id="source" name="source"/><br/>
   <input type="submit" value="Add this joke"/>
+  </form>
+  {%- if let Some(error) = error -%}
+  <div class="error">{{error}}</div>
+  {%- endif -%}
   </body>
 </html>

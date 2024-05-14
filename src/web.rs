@@ -35,10 +35,11 @@ pub struct IndexParams {
 }
 
 pub async fn handler_index(
-    State(jokebase): State<Arc<RwLock<JokeBase>>>,
+    State(appstate): HandlerAppState,
     Query(params): Query<IndexParams>,
 ) -> Response {
-    let jokebase = jokebase.read().await;
+    let appstate = appstate.read().await;
+    let jokebase = &appstate.jokebase;
 
     let joke = if let Some(id) = params.id {
         jokebase.get(&id).await
@@ -51,7 +52,16 @@ pub async fn handler_index(
 
     match joke {
         Ok(joke) => (StatusCode::OK, IndexTemplate::joke(&joke)).into_response(),
-        Err(e) => (StatusCode::OK, IndexTemplate::error(e.to_string())).into_response(),
+        Err(JokeBaseErr::JokeDoesNotExist(id)) => (
+            StatusCode::OK,
+            IndexTemplate::error(format!("cannot find joke {}", id)),
+        )
+            .into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            IndexTemplate::error(e.to_string()),
+        )
+            .into_response(),
     }
 }
 
@@ -59,18 +69,23 @@ pub async fn handler_index(
 #[template(path = "tell.html")]
 pub struct TellTemplate {
     stylesheet: &'static str,
+    error: Option<String>,
 }
 
 impl TellTemplate {
-    fn new() -> Self {
+    fn new(error: Option<String>) -> Self {
         Self {
             stylesheet: "/knock-knock.css",
+            error,
         }
     }
 }
 
-pub async fn handler_tell() -> Response {
-    (StatusCode::OK, TellTemplate::new()).into_response()
+pub async fn handler_tell(State(appstate): HandlerAppState) -> Response {
+    let mut appstate = appstate.write().await;
+    let error = appstate.error.clone();
+    appstate.error = None;
+    (StatusCode::OK, TellTemplate::new(error)).into_response()
 }
 
 #[derive(Deserialize)]
@@ -105,7 +120,7 @@ fn parse_source(source: Option<String>) -> Option<String> {
 }
 
 pub async fn handler_add(
-    State(jokebase): State<Arc<RwLock<JokeBase>>>,
+    State(appstate): HandlerAppState,
     Query(params): Query<AddParams>,
 ) -> Response {
     // XXX Condition user input.
@@ -117,14 +132,17 @@ pub async fn handler_add(
         source: parse_source(params.source),
     };
 
-    let mut jokebase = jokebase.write().await;
+    let mut appstate = appstate.write().await;
 
-    match jokebase.add(joke).await {
+    match appstate.jokebase.add(joke).await {
         Ok(()) => Redirect::to(&format!("/?id={}", params.id)).into_response(),
         Err(JokeBaseErr::JokeBaseIoError(msg)) => {
             (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response()
         }
-        Err(JokeBaseErr::JokeExists(id)) => (StatusCode::CONFLICT, id).into_response(),
+        Err(JokeBaseErr::JokeExists(id)) => {
+            appstate.error = Some(format!("joke {} already exists", id));
+            Redirect::to("/tell").into_response()
+        }
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }
 }

@@ -1,10 +1,12 @@
 mod api;
+mod appstate;
 mod joke;
 mod jokebase;
 mod startup;
 mod web;
 
 use api::*;
+use appstate::*;
 use joke::*;
 use jokebase::*;
 use startup::*;

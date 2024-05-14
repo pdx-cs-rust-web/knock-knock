@@ -21,7 +21,8 @@ pub async fn startup(ip: String) {
         tracing::error!("jokebase: {}", e);
         std::process::exit(1);
     });
-    let jokebase = Arc::new(RwLock::new(jokebase));
+
+    let state = Arc::new(RwLock::new(AppState::new(jokebase)));
 
     let mime_type = core::str::FromStr::from_str("image/vnd.microsoft.icon").unwrap();
     let favicon = services::ServeFile::new_with_mime("assets/static/favicon.ico", &mime_type);
@@ -54,7 +55,7 @@ pub async fn startup(ip: String) {
         .nest("/api/v1", apis)
         .fallback(handler_404)
         .layer(trace_layer)
-        .with_state(jokebase);
+        .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(ip).await.unwrap();
     tracing::debug!("serving {}", listener.local_addr().unwrap());
