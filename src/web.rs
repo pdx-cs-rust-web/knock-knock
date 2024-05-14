@@ -81,10 +81,9 @@ impl TellTemplate {
     }
 }
 
-pub async fn handler_tell(State(appstate): HandlerAppState) -> Response {
-    let mut appstate = appstate.write().await;
-    let error = appstate.error.clone();
-    appstate.error = None;
+pub async fn handler_tell(session: Session) -> Response {
+    let error: Option<String> = session.get(SESSION_ERROR_KEY).await.unwrap_or(None).clone();
+    let _ = session.remove::<Option<String>>(SESSION_ERROR_KEY).await;
     (StatusCode::OK, TellTemplate::new(error)).into_response()
 }
 
@@ -122,6 +121,7 @@ fn parse_source(source: Option<String>) -> Option<String> {
 pub async fn handler_add(
     State(appstate): HandlerAppState,
     Query(params): Query<AddParams>,
+    session: Session,
 ) -> Response {
     // XXX Condition user input.
     let joke = Joke {
@@ -140,7 +140,8 @@ pub async fn handler_add(
             (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response()
         }
         Err(JokeBaseErr::JokeExists(id)) => {
-            appstate.error = Some(format!("joke {} already exists", id));
+            let error = Some(format!("joke {} already exists", id));
+            let _ = session.insert(SESSION_ERROR_KEY, error).await;
             Redirect::to("/tell").into_response()
         }
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),

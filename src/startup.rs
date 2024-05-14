@@ -4,6 +4,8 @@ async fn handler_404() -> Response {
     (StatusCode::NOT_FOUND, "404 Not Found").into_response()
 }
 
+pub const SESSION_ERROR_KEY: &str = "session_error";
+
 pub async fn startup(ip: String) {
     tracing_subscriber::registry()
         .with(
@@ -16,6 +18,11 @@ pub async fn startup(ip: String) {
     let trace_layer = trace::TraceLayer::new_for_http()
         .make_span_with(trace::DefaultMakeSpan::new().level(tracing::Level::INFO))
         .on_response(trace::DefaultOnResponse::new().level(tracing::Level::INFO));
+
+    let session_store = MemoryStore::default();
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_secure(false)
+        .with_expiry(Expiry::OnSessionEnd);
 
     let jokebase = JokeBase::new().await.unwrap_or_else(|e| {
         tracing::error!("jokebase: {}", e);
@@ -54,6 +61,7 @@ pub async fn startup(ip: String) {
         .merge(rapidoc_ui)
         .nest("/api/v1", apis)
         .fallback(handler_404)
+        .layer(session_layer)
         .layer(trace_layer)
         .with_state(state);
 
