@@ -1,4 +1,5 @@
 mod api;
+mod auth;
 mod appstate;
 mod joke;
 mod jokebase;
@@ -6,6 +7,7 @@ mod startup;
 mod web;
 
 use api::*;
+use auth::*;
 use appstate::*;
 use joke::*;
 use jokebase::*;
@@ -25,6 +27,7 @@ use axum::{
     Json, Router,
 };
 use clap::Parser;
+use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, TokenUrl, RedirectUrl, RevocationUrl};
 use serde::{ser::SerializeStruct, Deserialize, Serialize, Serializer};
 extern crate serde_json;
 use sqlx::{

@@ -24,12 +24,17 @@ pub async fn startup(ip: String) {
         .with_secure(false)
         .with_expiry(Expiry::OnSessionEnd);
 
+    let auth_client = auth_client().unwrap_or_else(|e| {
+        tracing::error!("auth_client: {}", e);
+        std::process::exit(1);
+    });
+
     let jokebase = JokeBase::new().await.unwrap_or_else(|e| {
         tracing::error!("jokebase: {}", e);
         std::process::exit(1);
     });
 
-    let state = Arc::new(RwLock::new(AppState::new(jokebase)));
+    let state = Arc::new(RwLock::new(AppState::new(jokebase, auth_client)));
 
     let mime_type = core::str::FromStr::from_str("image/vnd.microsoft.icon").unwrap();
     let favicon = services::ServeFile::new_with_mime("assets/static/favicon.ico", &mime_type);

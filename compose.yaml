@@ -19,9 +19,12 @@ services:
       - PG_HOST=db
       - PG_USER=postgres
       - PG_PASSWORDFILE=/run/secrets/db-password
+      - GOOGLE_AUTHFILE=/run/secrets/google-oauth
+#      - RUST_BACKTRACE=1
 #      - RUST_LOG=debug
     secrets:
       - db-password
+      - google-oauth
     depends_on:
       db:
         condition: service_healthy
@@ -55,3 +58,5 @@ volumes:
 secrets:
   db-password:
     file: db/password.txt
+  google-oauth:
+    file: secrets/google-oauth.json
