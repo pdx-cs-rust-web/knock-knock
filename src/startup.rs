@@ -6,6 +6,22 @@ async fn handler_404() -> Response {
 
 pub const SESSION_ERROR_KEY: &str = "session_error";
 
+trait ExtUnwrapOrFail<T> {
+    fn unwrap_or_fail(self, msg: &str) -> T;
+}
+
+impl<T, E: std::fmt::Display> ExtUnwrapOrFail<T> for Result<T, E> {
+    fn unwrap_or_fail(self, msg: &str) -> T {
+        match self {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::error!("{}: {}", msg, e);
+                std::process::exit(1);
+            }
+        }
+    }
+}
+
 pub async fn startup(ip: String) {
     tracing_subscriber::registry()
         .with(
@@ -24,16 +40,8 @@ pub async fn startup(ip: String) {
         .with_secure(false)
         .with_expiry(Expiry::OnSessionEnd);
 
-    let auth_client = auth_client().unwrap_or_else(|e| {
-        tracing::error!("auth_client: {}", e);
-        std::process::exit(1);
-    });
-
-    let jokebase = JokeBase::new().await.unwrap_or_else(|e| {
-        tracing::error!("jokebase: {}", e);
-        std::process::exit(1);
-    });
-
+    let auth_client = auth_client().unwrap_or_fail("auth_client");
+    let jokebase = JokeBase::new().await.unwrap_or_fail("jokebase");
     let state = Arc::new(RwLock::new(AppState::new(jokebase, auth_client)));
 
     let mime_type = core::str::FromStr::from_str("image/vnd.microsoft.icon").unwrap();

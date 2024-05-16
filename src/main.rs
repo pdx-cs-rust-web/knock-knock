@@ -62,5 +62,5 @@ struct Args {
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    startup(args.serve).await
+    startup(args.serve).await;
 }
