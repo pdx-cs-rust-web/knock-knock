@@ -1,14 +1,14 @@
 mod api;
-mod auth;
 mod appstate;
+mod auth;
 mod joke;
 mod jokebase;
 mod startup;
 mod web;
 
 use api::*;
-use auth::*;
 use appstate::*;
+use auth::*;
 use joke::*;
 use jokebase::*;
 use startup::*;
@@ -21,13 +21,26 @@ use std::sync::Arc;
 use askama::Template;
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{
+        header::{AUTHORIZATION, USER_AGENT},
+        StatusCode,
+    },
     response::{IntoResponse, Redirect, Response},
     routing::{delete, get, post, put},
     Json, Router,
 };
+use axum_login::{AuthManagerLayerBuilder, AuthUser, AuthnBackend, UserId};
 use clap::Parser;
-use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, TokenUrl, RedirectUrl, RevocationUrl};
+// XXX Note that there is the `reqwest` crate and the `oauth2::reqwest`
+// module; these things are *unrelated*. Ugh.
+
+use oauth2::{
+    basic::{BasicClient, BasicRequestTokenError},
+    reqwest::{async_http_client, AsyncHttpClientError},
+    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, RevocationUrl,
+    TokenResponse, TokenUrl,
+};
+extern crate reqwest;
 use serde::{ser::SerializeStruct, Deserialize, Serialize, Serializer};
 extern crate serde_json;
 use sqlx::{

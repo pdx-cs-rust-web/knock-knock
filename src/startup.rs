@@ -35,14 +35,16 @@ pub async fn startup(ip: String) {
         .make_span_with(trace::DefaultMakeSpan::new().level(tracing::Level::INFO))
         .on_response(trace::DefaultOnResponse::new().level(tracing::Level::INFO));
 
+    let jokebase = JokeBase::new().await.unwrap_or_fail("jokebase");
+
     let session_store = MemoryStore::default();
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(false)
         .with_expiry(Expiry::OnSessionEnd);
-
     let auth_client = auth_client().unwrap_or_fail("auth_client");
-    let jokebase = JokeBase::new().await.unwrap_or_fail("jokebase");
     let state = Arc::new(RwLock::new(AppState::new(jokebase, auth_client)));
+    let backend = AuthBackend::new(&state);
+    let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();
 
     let mime_type = core::str::FromStr::from_str("image/vnd.microsoft.icon").unwrap();
     let favicon = services::ServeFile::new_with_mime("assets/static/favicon.ico", &mime_type);
@@ -74,7 +76,7 @@ pub async fn startup(ip: String) {
         .merge(rapidoc_ui)
         .nest("/api/v1", apis)
         .fallback(handler_404)
-        .layer(session_layer)
+        .layer(auth_layer)
         .layer(trace_layer)
         .with_state(state);
 
