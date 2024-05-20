@@ -61,10 +61,7 @@ impl<'s> ToSchema<'s> for JokeBaseError {
 }
 
 impl Serialize for JokeBaseError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let status: String = self.status.to_string();
         let mut state = serializer.serialize_struct("JokeBaseError", 2)?;
         state.serialize_field("status", &status)?;

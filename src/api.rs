@@ -11,9 +11,10 @@ use crate::*;
         post_joke,
         delete_joke,
         update_joke,
+        login,
     ),
     components(
-        schemas(Joke, JokeBaseError)
+        schemas(Joke, JokeBaseError, AuthError)
     ),
     tags(
         (name = "knock-knock", description = "Knock-Knock Joke API")
