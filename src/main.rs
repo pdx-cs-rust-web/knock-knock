@@ -1,5 +1,6 @@
 mod api;
 mod appstate;
+mod authjwt;
 mod joke;
 mod jokebase;
 mod startup;
@@ -7,6 +8,7 @@ mod web;
 
 use api::*;
 use appstate::*;
+use authjwt::*;
 use joke::*;
 use jokebase::*;
 use startup::*;
@@ -18,13 +20,19 @@ use std::sync::Arc;
 
 use askama::Template;
 use axum::{
-    extract::{Path, Query, State},
-    http::StatusCode,
+    async_trait,
+    extract::{FromRequestParts, Path, Query, State},
+    http::{request::Parts, StatusCode},
     response::{IntoResponse, Redirect, Response},
     routing::{delete, get, post, put},
-    Json, Router,
+    Json, RequestPartsExt, Router,
+};
+use axum_extra::{
+    headers::{authorization::Bearer, Authorization},
+    TypedHeader,
 };
 use clap::Parser;
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{ser::SerializeStruct, Deserialize, Serialize, Serializer};
 extern crate serde_json;
 use sqlx::{

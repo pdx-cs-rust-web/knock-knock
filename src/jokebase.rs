@@ -36,30 +36,32 @@ pub struct JokeBaseError {
     pub error: JokeBaseErr,
 }
 
+pub fn error_schema(name: &str, example: serde_json::Value) -> (&str, RefOr<Schema>) {
+    let sch = ObjectBuilder::new()
+        .property(
+            "status",
+            ObjectBuilder::new().schema_type(SchemaType::String),
+        )
+        .property(
+            "error",
+            ObjectBuilder::new().schema_type(SchemaType::String),
+        )
+        .example(Some(example))
+        .into();
+    (name, sch)
+}
+
 impl<'s> ToSchema<'s> for JokeBaseError {
     fn schema() -> (&'s str, RefOr<Schema>) {
-        let sch = ObjectBuilder::new()
-            .property(
-                "status",
-                ObjectBuilder::new().schema_type(SchemaType::String),
-            )
-            .property(
-                "error",
-                ObjectBuilder::new().schema_type(SchemaType::String),
-            )
-            .example(Some(serde_json::json!({
-                "status":"404","error":"no joke"
-            })))
-            .into();
-        ("JokeBaseError", sch)
+        let example = serde_json::json!({
+            "status":"404","error":"no joke"
+        });
+        error_schema("JokeBaseError", example)
     }
 }
 
 impl Serialize for JokeBaseError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let status: String = self.status.to_string();
         let mut state = serializer.serialize_struct("JokeBaseError", 2)?;
         state.serialize_field("status", &status)?;
@@ -117,7 +119,7 @@ impl JokeBase {
         use std::env::var;
 
         let pwf = var("PG_PASSWORDFILE")?;
-        let password = std::fs::read_to_string(pwf)?;
+        let password = tokio::fs::read_to_string(pwf).await?;
         let url = format!(
             "postgres://{}:{}@{}:5432/{}",
             var("PG_USER")?,

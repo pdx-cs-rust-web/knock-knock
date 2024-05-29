@@ -29,7 +29,12 @@ pub async fn startup(ip: String) {
         std::process::exit(1);
     });
 
-    let state = Arc::new(RwLock::new(AppState::new(jokebase)));
+    let jwt_keys = make_jwt_keys().await.unwrap_or_else(|e| {
+        tracing::error!("jwt keys: {}", e);
+        std::process::exit(1);
+    });
+
+    let state = Arc::new(RwLock::new(AppState::new(jokebase, jwt_keys)));
 
     let mime_type = core::str::FromStr::from_str("image/vnd.microsoft.icon").unwrap();
     let favicon = services::ServeFile::new_with_mime("assets/static/favicon.ico", &mime_type);
@@ -43,7 +48,8 @@ pub async fn startup(ip: String) {
         .route("/joke/:id", get(get_joke))
         .route("/joke/add", post(post_joke))
         .route("/joke/:id", delete(delete_joke))
-        .route("/joke/:id", put(update_joke));
+        .route("/joke/:id", put(update_joke))
+        .route("/login", get(login));
 
     let swagger_ui = SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi());
     let redoc_ui = Redoc::with_url("/redoc", ApiDoc::openapi());

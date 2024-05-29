@@ -19,9 +19,11 @@ services:
       - PG_HOST=db
       - PG_USER=postgres
       - PG_PASSWORDFILE=/run/secrets/db-password
+      - JWT_SECRETFILE=/run/secrets/jwt-secret
 #      - RUST_LOG=debug
     secrets:
       - db-password
+      - jwt-secret
     depends_on:
       db:
         condition: service_healthy
@@ -55,3 +57,5 @@ volumes:
 secrets:
   db-password:
     file: db/password.txt
+  jwt-secret:
+    file: db/jwt-secret.txt
