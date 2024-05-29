@@ -36,6 +36,10 @@ pub async fn startup(ip: String) {
 
     let state = Arc::new(RwLock::new(AppState::new(jokebase, jwt_keys)));
 
+    let cors = cors::CorsLayer::new()
+        .allow_methods([Method::GET])
+        .allow_origin(cors::Any);
+
     let mime_type = core::str::FromStr::from_str("image/vnd.microsoft.icon").unwrap();
     let favicon = services::ServeFile::new_with_mime("assets/static/favicon.ico", &mime_type);
 
@@ -67,6 +71,7 @@ pub async fn startup(ip: String) {
         .merge(rapidoc_ui)
         .nest("/api/v1", apis)
         .fallback(handler_404)
+        .layer(cors)
         .layer(session_layer)
         .layer(trace_layer)
         .with_state(state);
