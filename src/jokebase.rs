@@ -118,8 +118,7 @@ impl JokeBase {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         use std::env::var;
 
-        let pwf = var("PG_PASSWORDFILE")?;
-        let password = tokio::fs::read_to_string(pwf).await?;
+        let password = read_secret("PG_PASSWORDFILE").await?;
         let url = format!(
             "postgres://{}:{}@{}:5432/{}",
             var("PG_USER")?,

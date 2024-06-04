@@ -16,12 +16,15 @@ impl JwtKeys {
     }
 }
 
-pub async fn make_jwt_keys() -> Result<JwtKeys, Box<dyn Error>> {
-    use std::env::var;
-
-    let secretf = var("JWT_SECRETFILE")?;
+pub async fn read_secret(env_var: &str) -> Result<String, Box<dyn Error>> {
+    let secretf = std::env::var(env_var)?;
     let secret = tokio::fs::read_to_string(secretf).await?;
-    Ok(JwtKeys::new(secret.trim().as_bytes()))
+    Ok(secret.trim().to_string())
+}
+
+pub async fn make_jwt_keys() -> Result<JwtKeys, Box<dyn Error>> {
+    let secret = read_secret("JWT_SECRETFILE").await?;
+    Ok(JwtKeys::new(secret.as_bytes()))
 }
 
 #[derive(Debug, thiserror::Error, Serialize)]
