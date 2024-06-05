@@ -76,7 +76,11 @@ pub async fn get_joke(State(appstate): HandlerAppState, Path(joke_id): Path<Stri
         (status = 400, description = "Bad request", body = JokeBaseError)
     )
 )]
-pub async fn post_joke(State(appstate): HandlerAppState, Json(joke): Json<Joke>) -> Response {
+pub async fn post_joke(
+    _claims: Claims,
+    State(appstate): HandlerAppState,
+    Json(joke): Json<Joke>,
+) -> Response {
     match appstate.write().await.jokebase.add(joke).await {
         Ok(()) => StatusCode::CREATED.into_response(),
         Err(e) => JokeBaseError::response(StatusCode::BAD_REQUEST, e),
@@ -92,6 +96,7 @@ pub async fn post_joke(State(appstate): HandlerAppState, Json(joke): Json<Joke>)
     )
 )]
 pub async fn delete_joke(
+    _claims: Claims,
     State(appstate): HandlerAppState,
     Path(joke_id): Path<String>,
 ) -> Response {
@@ -116,6 +121,7 @@ pub async fn delete_joke(
     )
 )]
 pub async fn update_joke(
+    _claims: Claims,
     State(appstate): HandlerAppState,
     Path(joke_id): Path<String>,
     Json(joke): Json<Joke>,
