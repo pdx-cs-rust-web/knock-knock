@@ -2,6 +2,8 @@
 
 use crate::*;
 
+use jsonwebtoken::{EncodingKey, DecodingKey};
+
 pub struct JwtKeys {
     encoding: EncodingKey,
     decoding: DecodingKey,
@@ -29,14 +31,12 @@ pub async fn make_jwt_keys() -> Result<JwtKeys, Box<dyn Error>> {
 
 #[derive(Debug, thiserror::Error, Serialize)]
 pub enum AuthError {
-    #[error("wrong credentials")]
-    WrongCredentials,
-    #[error("missing credentials")]
-    MissingCredentials,
-    #[error("token creation")]
-    TokenCreation,
     #[error("invalid token")]
     InvalidToken,
+    #[error("internal error: token creation")]
+    TokenCreation,
+    #[error("registration error")]
+    Registration,
 }
 
 impl<'s> ToSchema<'s> for AuthError {
@@ -46,12 +46,6 @@ impl<'s> ToSchema<'s> for AuthError {
         });
         error_schema("AuthError", example)
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
-    full_name: String,
-    email: String,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -69,70 +63,27 @@ impl AuthBody {
     }
 }
 
+impl IntoResponse for AuthBody {
+    fn into_response(self) -> Response {
+        Json(serde_json::json!(self)).into_response()
+    }
+}
+
+/*
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct AuthPayload {
     client_id: String,
     client_secret: String,
 }
-
-#[utoipa::path(
-    get,
-    path = "/api/v1/login",
-    responses(
-        (status = 200, description = "login ok", body = AuthBody),
-        (status = 400, description = "missing credentials", body = AuthError),
-        (status = 401, description = "wrong credentials", body = AuthError),
-        (status = 400, description = "invalid token", body = AuthError),
-        (status = 500, description = "token creation error", body = AuthError),
-    )
-)]
-pub async fn login(
-    State(state): HandlerAppState,
-    Json(payload): Json<AuthPayload>,
-) -> Response {
-    if payload.client_id.is_empty() || payload.client_secret.is_empty() {
-        return AuthError::MissingCredentials.into_response();
-    }
-
-    #[derive(sqlx::FromRow)]
-    struct PwUser {
-        client_id: String,
-        client_secret: String,
-        full_name: String,
-        email: String,
-    }
-
-    let user: Result<PwUser, sqlx::Error> = sqlx::query_as(r#"SELECT * FROM passwords WHERE client_id = $1"#)
-        .bind(&payload.client_id)
-        .fetch_one(&state.read().await.jokebase.0)
-        .await;
-    let user = match user {
-        Ok(user) => user,
-        Err(_) => return AuthError::WrongCredentials.into_response(),
-    };
-
-    if payload.client_id != user.client_id || payload.client_secret != user.client_secret {
-        return AuthError::WrongCredentials.into_response();
-    }
-
-    let claims = Claims {
-        full_name: user.full_name,
-        email: user.email,
-    };
-
-    let token = match encode(&Header::default(), &claims, &state.read().await.jwt_keys.encoding) {
-        Ok(token) => token,
-        Err(_) => return AuthError::TokenCreation.into_response(),
-    };
-
-    Json(AuthBody::new(token)).into_response()
-}
+*/
 
 #[async_trait]
 impl FromRequestParts<SharedAppState> for Claims {
     type Rejection = AuthError;
 
     async fn from_request_parts(parts: &mut Parts, state: &SharedAppState) -> Result<Self, Self::Rejection> {
+        use jsonwebtoken::{Validation, decode};
+
         // Extract the token from the authorization header
         let TypedHeader(Authorization(bearer)) = parts
             .extract::<TypedHeader<Authorization<Bearer>>>()
@@ -149,8 +100,7 @@ impl FromRequestParts<SharedAppState> for Claims {
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
-            AuthError::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
-            AuthError::MissingCredentials => (StatusCode::BAD_REQUEST, "Missing credentials"),
+            AuthError::Registration => (StatusCode::UNAUTHORIZED, "Invalid registration"),
             AuthError::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "Token creation error"),
             AuthError::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token"),
         };
@@ -160,4 +110,42 @@ impl IntoResponse for AuthError {
         }));
         (status, body).into_response()
     }
+}
+
+#[derive(Debug, Clone, Deserialize, ToSchema)]
+pub struct Registration {
+    #[schema(example = "John Smith")]
+    full_name: String,
+    #[schema(example = "johnsmith@example.org")]
+    email: String,
+    #[schema(example = "password123")]
+    password: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Claims {
+    #[schema(example = "knock-knock.po8.org")]
+    iss: String,
+    #[schema(example = "John Smith <johnsmith@example.org>")]
+    sub: String,
+    #[schema(format = "DateTime", example = "2024-06-04T21:49:06Z")]
+    exp: String,
+}
+
+pub fn make_jwt_token(appstate: &AppState, registration: &Registration) -> Result<AuthBody, AuthError> {
+    use jsonwebtoken::{Algorithm, Header, encode};
+    
+    if registration.password != appstate.reg_key {
+        return Err(AuthError::Registration);
+    }
+
+    let iss = "knock-knock.po8.org".to_string();
+    let sub = format!("{} <{}>", registration.full_name, registration.email);
+    let exp = (Utc::now() + TimeDelta::days(1))
+        .to_rfc3339_opts(SecondsFormat::Secs, true);
+    let claims = Claims { iss, sub, exp };
+    let header = Header::new(Algorithm::HS512);
+    let token = encode(&header, &claims, &appstate.jwt_keys.encoding)
+        .map_err(|_| AuthError::TokenCreation)?;
+    Ok(AuthBody::new(token))
 }

@@ -20,10 +20,12 @@ services:
       - PG_USER=postgres
       - PG_PASSWORDFILE=/run/secrets/db-password
       - JWT_SECRETFILE=/run/secrets/jwt-secret
+      - REG_PASSWORD=/run/secrets/reg-password
 #      - RUST_LOG=debug
     secrets:
       - db-password
       - jwt-secret
+      - reg-password
     depends_on:
       db:
         condition: service_healthy
@@ -59,3 +61,5 @@ secrets:
     file: db/password.txt
   jwt-secret:
     file: db/jwt-secret.txt
+  reg-password:
+    file: db/reg-password.txt

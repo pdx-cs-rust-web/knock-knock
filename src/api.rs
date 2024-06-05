@@ -11,7 +11,7 @@ use crate::*;
         post_joke,
         delete_joke,
         update_joke,
-        login,
+        register,
     ),
     components(
         schemas(Joke, JokeBaseError, AuthError)
@@ -130,5 +130,28 @@ pub async fn update_joke(
             JokeBaseError::response(StatusCode::NOT_FOUND, JokeBaseErr::NoJoke)
         }
         Err(e) => JokeBaseError::response(StatusCode::BAD_REQUEST, e),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/register",
+    request_body(
+        content = inline(Registration),
+        description = "Get an API key"
+    ),
+    responses(
+        (status = 200, description = "JSON Web Token", body = AuthBody),
+        (status = 401, description = "Registration failed", body = AuthError),
+    )
+)]
+pub async fn register(
+    State(appstate): HandlerAppState,
+    Json(registration): Json<Registration>,
+) -> Response {
+    let appstate = appstate.read().await;
+    match make_jwt_token(&appstate, &registration) {
+        Err(e) => e.into_response(),
+        Ok(token) => (StatusCode::OK, token).into_response(),
     }
 }

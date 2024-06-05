@@ -29,12 +29,17 @@ pub async fn startup(ip: String) {
         std::process::exit(1);
     });
 
-    let jwt_keys = make_jwt_keys().await.unwrap_or_else(|e| {
-        tracing::error!("jwt keys: {}", e);
+    let jwt_keys = make_jwt_keys().await.unwrap_or_else(|_| {
+        tracing::error!("jwt keys");
         std::process::exit(1);
     });
 
-    let state = Arc::new(RwLock::new(AppState::new(jokebase, jwt_keys)));
+    let reg_key = read_secret("REG_PASSWORD").await.unwrap_or_else(|_| {
+        tracing::error!("reg password");
+        std::process::exit(1);
+    });
+
+    let state = Arc::new(RwLock::new(AppState::new(jokebase, jwt_keys, reg_key)));
 
     let cors = cors::CorsLayer::new()
         .allow_methods([Method::GET])
@@ -53,7 +58,7 @@ pub async fn startup(ip: String) {
         .route("/joke/add", post(post_joke))
         .route("/joke/:id", delete(delete_joke))
         .route("/joke/:id", put(update_joke))
-        .route("/login", get(login));
+        .route("/register", get(register));
 
     let swagger_ui = SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi());
     let redoc_ui = Redoc::with_url("/redoc", ApiDoc::openapi());
