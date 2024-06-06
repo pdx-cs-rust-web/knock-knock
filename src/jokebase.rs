@@ -205,16 +205,20 @@ impl JokeBase {
     pub async fn update(&mut self, index: &str, joke: Joke) -> Result<(), JokeBaseErr> {
         let mut tx = Pool::begin(&self.0).await?;
         let q = sqlx::query(
-            r#"UPDATE jokes SET
-            (id, whos_there, answer_who, source)
-            VALUES ($1, $2, $3, $4);"#,
+            r#"UPDATE jokes
+            SET (whos_there, answer_who, source) = ($2, $3, $4)
+            WHERE jokes.id = $1
+            RETURNING jokes.id;"#,
         );
-        q.bind(&joke.id)
+        let result = q.bind(&joke.id)
             .bind(&joke.whos_there)
             .bind(&joke.answer_who)
             .bind(&joke.source)
-            .execute(&mut *tx)
+            .fetch_all(&mut *tx)
             .await?;
+        if result.len() == 0 {
+            return Err(JokeBaseErr::JokeDoesNotExist(index.to_string()));
+        }
         sqlx::query(r#"DELETE FROM tags WHERE id = $1;"#)
             .bind(index)
             .execute(&mut *tx)
