@@ -188,14 +188,17 @@ impl JokeBase {
 
     pub async fn delete(&mut self, index: &str) -> Result<(), JokeBaseErr> {
         let mut tx = Pool::begin(&self.0).await?;
-        sqlx::query(r#"DELETE FROM jokes WHERE id = $1;"#)
-            .bind(index)
-            .execute(&mut *tx)
-            .await?;
         sqlx::query(r#"DELETE FROM tags WHERE id = $1;"#)
             .bind(index)
             .execute(&mut *tx)
             .await?;
+        let result = sqlx::query(r#"DELETE FROM jokes WHERE id = $1 RETURNING jokes.id;"#)
+            .bind(index)
+            .fetch_all(&mut *tx)
+            .await?;
+        if result.len() == 0 {
+            return Err(JokeBaseErr::JokeDoesNotExist(index.to_string()));
+        }
         Ok(tx.commit().await?)
     }
 
