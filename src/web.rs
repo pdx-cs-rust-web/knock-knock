@@ -51,17 +51,22 @@ pub async fn handler_index(
     };
 
     match joke {
-        Ok(joke) => (StatusCode::OK, IndexTemplate::joke(&joke)).into_response(),
-        Err(JokeBaseErr::JokeDoesNotExist(id)) => (
+        Ok(joke) => render(StatusCode::OK, IndexTemplate::joke(&joke)),
+        Err(JokeBaseErr::JokeDoesNotExist(id)) => render(
             StatusCode::OK,
             IndexTemplate::error(format!("cannot find joke {}", id)),
-        )
-            .into_response(),
-        Err(e) => (
+        ),
+        Err(e) => render(
             StatusCode::INTERNAL_SERVER_ERROR,
             IndexTemplate::error(e.to_string()),
-        )
-            .into_response(),
+        ),
+    }
+}
+
+fn render<T: Template>(status: StatusCode, template: T) -> Response {
+    match template.render() {
+        Ok(body) => (status, Html(body)).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }
 }
 
@@ -84,7 +89,7 @@ impl TellTemplate {
 pub async fn handler_tell(session: Session) -> Response {
     let error: Option<String> = session.get(SESSION_ERROR_KEY).await.unwrap_or(None).clone();
     let _ = session.remove::<Option<String>>(SESSION_ERROR_KEY).await;
-    (StatusCode::OK, TellTemplate::new(error)).into_response()
+    render(StatusCode::OK, TellTemplate::new(error))
 }
 
 #[derive(Deserialize)]

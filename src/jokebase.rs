@@ -36,27 +36,32 @@ pub struct JokeBaseError {
     pub error: JokeBaseErr,
 }
 
-pub fn error_schema(name: &str, example: serde_json::Value) -> (&str, RefOr<Schema>) {
-    let sch = ObjectBuilder::new()
+pub fn error_schema(example: serde_json::Value) -> RefOr<Schema> {
+    ObjectBuilder::new()
         .property(
             "status",
-            ObjectBuilder::new().schema_type(SchemaType::String),
+            ObjectBuilder::new().schema_type(Type::String),
         )
         .property(
             "error",
-            ObjectBuilder::new().schema_type(SchemaType::String),
+            ObjectBuilder::new().schema_type(Type::String),
         )
-        .example(Some(example))
-        .into();
-    (name, sch)
+        .examples(Some(example))
+        .into()
 }
 
-impl<'s> ToSchema<'s> for JokeBaseError {
-    fn schema() -> (&'s str, RefOr<Schema>) {
+impl PartialSchema for JokeBaseError {
+    fn schema() -> RefOr<Schema> {
         let example = serde_json::json!({
             "status":"404","error":"no joke"
         });
-        error_schema("JokeBaseError", example)
+        error_schema(example)
+    }
+}
+
+impl ToSchema for JokeBaseError {
+    fn name() -> std::borrow::Cow<'static, str> {
+        "JokeBaseError".into()
     }
 }
 
@@ -140,7 +145,7 @@ impl JokeBase {
         Ok(joke)
     }
 
-    pub async fn get<'a>(&self, index: &str) -> Result<Joke, JokeBaseErr> {
+    pub async fn get(&self, index: &str) -> Result<Joke, JokeBaseErr> {
         let row = sqlx::query(r#"SELECT * FROM jokes WHERE id = $1;"#)
             .bind(index)
             .fetch_one(&self.0)
@@ -150,7 +155,7 @@ impl JokeBase {
         Ok(joke)
     }
 
-    pub async fn get_jokes<'a>(&self) -> Result<Vec<Joke>, JokeBaseErr> {
+    pub async fn get_jokes(&self) -> Result<Vec<Joke>, JokeBaseErr> {
         let rows = sqlx::query(r#"SELECT * FROM jokes;"#)
             .fetch_all(&self.0)
             .await?;
@@ -175,10 +180,10 @@ impl JokeBase {
         .execute(&mut *tx)
         .await;
         result.map_err(|e| {
-            if let sqlx::Error::Database(ref dbe) = e {
-                if let Some("23505") = dbe.code().as_deref() {
-                    return JokeBaseErr::JokeExists(joke.id.to_string());
-                }
+            if let sqlx::Error::Database(ref dbe) = e
+                && let Some("23505") = dbe.code().as_deref()
+            {
+                return JokeBaseErr::JokeExists(joke.id.to_string());
             }
             JokeBaseErr::DatabaseError(e.to_string())
         })?;
@@ -196,7 +201,7 @@ impl JokeBase {
             .bind(index)
             .fetch_all(&mut *tx)
             .await?;
-        if result.len() == 0 {
+        if result.is_empty() {
             return Err(JokeBaseErr::JokeDoesNotExist(index.to_string()));
         }
         Ok(tx.commit().await?)
@@ -216,7 +221,7 @@ impl JokeBase {
             .bind(&joke.source)
             .fetch_all(&mut *tx)
             .await?;
-        if result.len() == 0 {
+        if result.is_empty() {
             return Err(JokeBaseErr::JokeDoesNotExist(index.to_string()));
         }
         sqlx::query(r#"DELETE FROM tags WHERE id = $1;"#)

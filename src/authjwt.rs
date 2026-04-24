@@ -39,12 +39,18 @@ pub enum AuthError {
     Registration,
 }
 
-impl<'s> ToSchema<'s> for AuthError {
-    fn schema() -> (&'s str, RefOr<Schema>) {
+impl PartialSchema for AuthError {
+    fn schema() -> RefOr<Schema> {
         let example = serde_json::json!({
             "status":"401","error":"wrong credentials"
         });
-        error_schema("AuthError", example)
+        error_schema(example)
+    }
+}
+
+impl ToSchema for AuthError {
+    fn name() -> std::borrow::Cow<'static, str> {
+        "AuthError".into()
     }
 }
 
@@ -77,7 +83,6 @@ pub struct AuthPayload {
 }
 */
 
-#[async_trait]
 impl FromRequestParts<SharedAppState> for Claims {
     type Rejection = AuthError;
 

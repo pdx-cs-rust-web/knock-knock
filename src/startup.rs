@@ -54,10 +54,10 @@ pub async fn startup(ip: String) {
     let apis = Router::new()
         .route("/jokes", get(jokes))
         .route("/joke", get(joke))
-        .route("/joke/:id", get(get_joke))
+        .route("/joke/{id}", get(get_joke))
         .route("/joke/add", post(post_joke))
-        .route("/joke/:id", delete(delete_joke))
-        .route("/joke/:id", put(update_joke))
+        .route("/joke/{id}", delete(delete_joke))
+        .route("/joke/{id}", put(update_joke))
         .route("/register", get(register));
 
     let swagger_ui = SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi());
