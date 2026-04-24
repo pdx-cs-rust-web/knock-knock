@@ -43,7 +43,8 @@ pub async fn startup(ip: String) {
 
     let cors = cors::CorsLayer::new()
         .allow_origin(cors::Any)
-        .allow_methods([Method::GET, Method::PUT, Method::DELETE, Method::POST]);
+        .allow_methods([Method::GET, Method::PUT, Method::DELETE, Method::POST])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
 
     let mime_type = core::str::FromStr::from_str("image/vnd.microsoft.icon").unwrap();
     let favicon = services::ServeFile::new_with_mime("assets/static/favicon.ico", &mime_type);
