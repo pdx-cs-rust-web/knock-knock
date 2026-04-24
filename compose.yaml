@@ -37,7 +37,7 @@ services:
 # to set the database password. You must create `db/password.txt` and add
 # a password of your choosing to it before running `docker compose up`.
   db:
-    image: postgres
+    image: postgres:17
     restart: always
     user: postgres
     secrets:

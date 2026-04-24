@@ -6,28 +6,18 @@
 
 # Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
 
-ARG RUST_VERSION=1.86
+ARG RUST_VERSION=1.88
 ARG APP_NAME=knock-knock
 
 ################################################################################
 # Create a stage for building the application.
 
-FROM clux/muslrust:stable AS chef
+FROM rust:${RUST_VERSION}-alpine AS build
 ARG APP_NAME
-USER root
-RUN cargo install cargo-chef
 WORKDIR /app
 
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-FROM chef AS builder
-COPY --from=planner /app/recipe.json recipe.json
-# Notice that we are specifying the --target flag!
-RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
-COPY . .
-RUN cargo build --release --target x86_64-unknown-linux-musl --bin app
+# Install host build dependencies.
+RUN apk add --no-cache clang lld musl-dev git curl
 
 # Build the application.
 # Leverage a cache mount to /usr/local/cargo/registry/
