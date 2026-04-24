@@ -140,7 +140,7 @@ pub async fn update_joke(
 }
 
 #[utoipa::path(
-    post,
+    get,
     path = "/api/v1/register",
     request_body(
         content = inline(Registration),

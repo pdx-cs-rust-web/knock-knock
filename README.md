@@ -54,7 +54,7 @@ on `/api/v1/joke/{id}`) require a bearer JWT. Obtain one by
 registering with the shared `REG_PASSWORD`:
 
 ```sh
-curl http://localhost:3000/api/v1/register \
+curl -X GET http://localhost:3000/api/v1/register \
     -H 'Content-Type: application/json' \
     -d '{"full_name":"Jane Doe",
          "email":"jane@example.org",
@@ -64,6 +64,12 @@ curl http://localhost:3000/api/v1/register \
 The response is `{"access_token": "...", "token_type": "Bearer"}`.
 Pass the token on subsequent requests as
 `Authorization: Bearer <token>`. Tokens expire after one day.
+
+> **Note:** `/api/v1/register` is wired as a `GET` with a
+> JSON body, which is REST-unusual — `POST` is the right verb
+> here. It's left as `GET` for now because existing frontends
+> depend on the current behavior; flipping it to `POST` is a
+> follow-up that needs to be coordinated with those updates.
 
 ## HTML frontend
 
