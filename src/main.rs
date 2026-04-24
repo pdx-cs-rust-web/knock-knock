@@ -20,10 +20,9 @@ use std::sync::Arc;
 
 use askama::Template;
 use axum::{
-    async_trait,
     extract::{FromRequestParts, Path, Query, State},
     http::{request::Parts, Method, StatusCode},
-    response::{IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect, Response},
     routing::{delete, get, post, put},
     Json, RequestPartsExt, Router,
 };
@@ -48,9 +47,9 @@ use tower_sessions::{Expiry, MemoryStore, Session, SessionManagerLayer};
 extern crate tracing;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::{
-    openapi::schema::{ObjectBuilder, Schema, SchemaType},
+    openapi::schema::{ObjectBuilder, Schema, Type},
     openapi::RefOr,
-    OpenApi, ToSchema,
+    OpenApi, PartialSchema, ToSchema,
 };
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
